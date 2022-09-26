@@ -4,29 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6e91c6b6-2304-4154-a53a-2c2137c5e94c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.mvn/wrapper/maven-wrapper.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.mvn/wrapper/maven-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mvnw" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/mvnw.cmd" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Bomber.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Grass.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Wall.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/Sprite.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/demo.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/uet/oop/bomberman/hello-view.fxml" afterDir="false" />
+    <list default="true" id="6e91c6b6-2304-4154-a53a-2c2137c5e94c" name="Changes" comment="'Fix bug start method'">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,6 +109,14 @@
       <option name="presentableId" value="Default" />
       <updated>1664023236964</updated>
     </task>
+    <task id="LOCAL-00001" summary="'Fix bug start method'">
+      <created>1664172767224</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1664172767224</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -142,6 +129,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="'Fix bug start method'" />
+    <option name="LAST_COMMIT_MESSAGE" value="'Fix bug start method'" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/bomberman$BombermanGame.ic" NAME="BombermanGame Coverage Results" MODIFIED="1664165211628" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false">
