@@ -240,7 +240,7 @@ public class Sprite {
         return SIZE;
     }
 
-    public int getPixel(int i) {
+    public int getPixels(int i) {
         return _pixels[i];
     }
 
