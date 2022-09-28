@@ -1,8 +1,7 @@
 package uet.oop.bomberman;
 
-//import javafx.stage.Screen;
-import uet.oop.bomberman.input.Keyboard;
 import uet.oop.bomberman.graphics.Screen;
+import uet.oop.bomberman.input.Keyboard;
 
 import java.awt.*;
 import java.awt.image.BufferStrategy;
@@ -46,6 +45,9 @@ public class Game extends Canvas {
     private BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
     private int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 
+    /**
+     * Constructor.
+     */
     public Game(Frame frame) {
         _frame = frame;
         _frame.setTitle(TITLE);
@@ -56,6 +58,9 @@ public class Game extends Canvas {
         addKeyListener(_input);
     }
 
+    /**
+     * render the game.
+     */
     private void renderGame() {
         BufferStrategy bs = getBufferStrategy();
         if (bs == null) {
@@ -63,7 +68,7 @@ public class Game extends Canvas {
             return;
         }
 
-//        screen.clear();
+        screen.clear();
 
         _board.render(screen);
 
@@ -72,8 +77,145 @@ public class Game extends Canvas {
         }
 
         Graphics g = bs.getDrawGraphics();
-        g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
+        g.drawImage((Image) image, 0, 0, (int) getWidth(), (int) getHeight(), null);
         g.dispose();
         bs.show();
+    }
+
+    /**
+     * render the screen.
+     */
+    private void renderScreen() {
+        BufferStrategy bs = getBufferStrategy();
+        if (bs == null) {
+            createBufferStrategy(3);
+            return;
+        }
+
+        screen.clear();
+
+        Graphics g = bs.getDrawGraphics();
+
+        _board.drawScreen(g);
+
+        g.dispose();
+        bs.show();
+    }
+
+    /**
+     * update game state.
+     */
+    private void updateGame() {
+        _board.update();
+        _input.update();
+    }
+
+    /**
+     * Start the game
+     */
+    public void start() {
+        isRunning = true;
+
+        long lastTime = System.nanoTime();
+        long timer = System.currentTimeMillis();
+        final double ns = 1000000000.0 / 60.0;
+        double delta = 0;
+        int frames = 0;
+        int updates = 0;
+        requestFocus();
+
+        while (isRunning) {
+            long now = System.nanoTime();
+            delta += (now - lastTime) / ns;
+            lastTime = now;
+            boolean shouldRender = false;
+
+            while (delta >= 1) {
+                updates++;
+                updateGame();
+                delta--;
+                shouldRender = true;
+            }
+
+            try {
+                Thread.sleep(2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (shouldRender) {
+                frames++;
+            }
+
+            if (isPaused) {
+                if (_screenDelay <= 0) {
+                    isPaused = false;
+                    _board.setShow(1);
+                }
+                renderScreen();
+            } else {
+                renderGame();
+            }
+        }
+    }
+
+    // setter and getter.
+    public static int getBombRate() {
+        return bombRate;
+    }
+
+    public static void setBombRate(int bombRate) {
+        Game.bombRate = bombRate;
+    }
+
+    public static int getBombRadius() {
+        return bombRadius;
+    }
+
+    public static void setBombRadius(int bombRadius) {
+        Game.bombRadius = bombRadius;
+    }
+
+    public static double getBomberSpeed() {
+        return bomberSpeed;
+    }
+
+    public static void setBomberSpeed(double bomberSpeed) {
+        Game.bomberSpeed = bomberSpeed;
+    }
+
+    public void resetScreenDelay() {
+        _screenDelay = SCREENDELAY;
+    }
+
+    public void pause() {
+        isPaused = true;
+        assert _board != null;
+        _board.setShow(0);
+    }
+
+    public boolean isPaused() {
+        return isPaused;
+    }
+
+    /**
+     * bomber speed after power up.
+     */
+    public static void addBomberSpeed(double i) {
+        bomberSpeed += i;
+    }
+
+    /**
+     * bomb radius after power up.
+     */
+    public static void addBombRadius(int i) {
+        bombRadius += i;
+    }
+
+    /**
+     * bomb rate after power up.
+     */
+    public static void addBombRate(int i) {
+        bombRate += i;
     }
 }

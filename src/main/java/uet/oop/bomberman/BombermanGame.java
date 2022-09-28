@@ -7,12 +7,18 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.stage.Stage;
+import uet.oop.bomberman.entities.bomb.Flame;
 import uet.oop.bomberman.entities.character.Bomber;
 import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.entities.tile.Grass;
+import uet.oop.bomberman.entities.tile.Tile;
 import uet.oop.bomberman.entities.tile.Wall;
+import uet.oop.bomberman.entities.tile.destroyable.Brick;
+import uet.oop.bomberman.entities.tile.destroyable.DestroyableTile;
 import uet.oop.bomberman.graphics.Sprite;
+import uet.oop.bomberman.sound.Sound;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +63,7 @@ public class BombermanGame extends Application {
         };
         timer.start();
 
+        Sound.play();
         createMap();
 
         Entity bomberman = new Bomber(1, 1, Sprite.player_right.getFxImage());
@@ -69,6 +76,9 @@ public class BombermanGame extends Application {
                 Entity object;
                 if (j == 0 || j == HEIGHT - 1 || i == 0 || i == WIDTH - 1) {
                     object = new Wall(i, j, Sprite.wall.getFxImage());
+                }
+                else if (i % 2 == 0 && j % 2 == 0) {
+                    object = new DestroyableTile(i, j, Sprite.brick.getFxImage());
                 }
                 else {
                     object = new Grass(i, j, Sprite.grass.getFxImage());

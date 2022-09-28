@@ -14,20 +14,24 @@ public class DestroyableTile extends Tile {
     private final int MAX_ANIMATE = 7500;
     private int animate = 0;
     protected boolean isDestroyed = false;
-    protected int timeAfter = 20;
-    protected Sprite belowSprite = Sprite.grass;
+    protected int _timeToDisapear = 20;
+    protected Sprite _belowSprite = Sprite.grass;
 
     public DestroyableTile(int x, int y, Sprite sprite) {
         super(x, y, sprite);
+    }
+
+    public DestroyableTile(int x, int y, Image img) {
+        super(x, y, img);
     }
 
     @Override
     public void update() {
         if (isDestroyed) {
             animate = (animate + 1) % MAX_ANIMATE;
-            if (timeAfter > 0) {
-                timeAfter--;
-                if (timeAfter == 0) {
+            if (_timeToDisapear > 0) {
+                _timeToDisapear--;
+                if (_timeToDisapear == 0) {
                     remove();
                 }
             }
@@ -41,7 +45,6 @@ public class DestroyableTile extends Tile {
 
     public void destroy() {
         isDestroyed = true;
-        sprite = Sprite.movingSprite(Sprite.brick_exploded, Sprite.brick_exploded1, Sprite.brick_exploded2, animate, 60);
     }
 
     @Override
@@ -53,7 +56,7 @@ public class DestroyableTile extends Tile {
     }
 
     public void addBelowSprite(Sprite sprite) {
-        belowSprite = sprite;
+        _belowSprite = sprite;
     }
 
     protected Sprite movingSprite(Sprite normal, Sprite x1, Sprite x2) {
