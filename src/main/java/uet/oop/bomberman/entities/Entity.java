@@ -4,6 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import uet.oop.bomberman.graphics.IRender;
 import uet.oop.bomberman.graphics.Sprite;
+import uet.oop.bomberman.level.Coordinates;
 
 /**
  * Base class for all entities in the game
@@ -18,7 +19,7 @@ public abstract class Entity implements IRender {
     protected boolean isRemoved = false;
 
     // ảnh của entity
-    protected Sprite sprite;
+    protected Sprite _sprite;
     protected Image img;
 
     // Khởi tạo đối tượng, chuyển từ tọa độ đơn vị sang tọa độ trong canvas
@@ -31,7 +32,7 @@ public abstract class Entity implements IRender {
     public Entity(int x, int y, Sprite sprite) {
         _x = x;
         _y = y;
-        this.sprite = sprite;
+        _sprite = sprite;
     }
 
     public void render(GraphicsContext gc) {
@@ -57,28 +58,16 @@ public abstract class Entity implements IRender {
         return _y;
     }
 
-    public void setX(int x) {
-        _x = x;
-    }
-
-    public void setY(int y) {
-        _y = y;
-    }
-
     public Sprite getSprite() {
-        return sprite;
+        return _sprite;
     }
 
-    public void setSprite(Sprite sprite) {
-        this.sprite = sprite;
+    public int getXTile() {
+        return Coordinates.pixelToTile(_x + _sprite.SIZE / 2);
     }
 
-    public int getXUnit() {
-        return _x / Sprite.SCALED_SIZE;
-    }
-
-    public int getYUnit() {
-        return _y / Sprite.SCALED_SIZE;
+    public int getYTile(){
+        return Coordinates.pixelToTile(_y + _sprite.SIZE / 2);
     }
 
     public boolean isRemoved() {

@@ -14,6 +14,7 @@ public abstract class LevelLoader {
      */
     public LevelLoader(Board board, int level) throws LoadLevelException {
         _board = board;
+
         loadLevel(level);
     }
 

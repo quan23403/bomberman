@@ -13,6 +13,10 @@ public abstract class Tile extends Entity {
         super(x, y, sprite);
     }
 
+    public Tile (int x, int y, Image img) {
+        super(x, y, img);
+    }
+
     /**
      * Mặc định không cho phép đối tượng đi qua
      * @param e Entity va chạm
