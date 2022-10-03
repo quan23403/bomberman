@@ -22,6 +22,9 @@ public abstract class Entity implements IRender {
     protected Sprite _sprite;
     protected Image img;
 
+    public Entity(){
+        _sprite = Sprite.grass; //default sprite
+    }
     // Khởi tạo đối tượng, chuyển từ tọa độ đơn vị sang tọa độ trong canvas
     public Entity( int xUnit, int yUnit, Image img) {
         _x = xUnit * Sprite.SCALED_SIZE;

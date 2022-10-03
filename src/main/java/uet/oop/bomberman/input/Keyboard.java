@@ -19,6 +19,12 @@ public class Keyboard implements KeyListener {
         esc = keys[KeyEvent.VK_ESCAPE];
     }
 
+    public Keyboard() {
+        for (int i = 0; i < keys.length; i++) {
+            keys[i] = false;
+        }
+    }
+
     @Override
     public void keyTyped(KeyEvent e) {
 

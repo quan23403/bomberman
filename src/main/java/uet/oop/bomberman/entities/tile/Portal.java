@@ -1,5 +1,6 @@
 package uet.oop.bomberman.entities.tile;
 
+import javafx.scene.image.Image;
 import uet.oop.bomberman.Board;
 import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.entities.character.Bomber;
@@ -12,6 +13,10 @@ public class Portal extends Tile {
     public Portal(int x, int y, Board board, Sprite sprite) {
         super(x, y, sprite);
         _board = board;
+    }
+
+    public Portal(int x, int y, Image image) {
+        super(x, y, image);
     }
 
     /**
@@ -27,7 +32,7 @@ public class Portal extends Tile {
             }
 
             if (e.getXTile() == getX() && e.getYTile() == getY()) {
-                if(_board.detectNoEnemies()){
+                if (_board.detectNoEnemies()) {
                     _board.nextLevel();
                     Sound.play("CRYST_UP");
                 }
