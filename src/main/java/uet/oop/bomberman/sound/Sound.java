@@ -16,6 +16,7 @@ public class Sound {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        
     }
     public static void play(){
         try {

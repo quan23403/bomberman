@@ -1,12 +1,18 @@
 package uet.oop.bomberman;
 
+import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.graphics.Screen;
+import uet.oop.bomberman.graphics.SpriteSheet;
 import uet.oop.bomberman.input.Keyboard;
 
 import java.awt.*;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.BufferedReader;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Game extends Canvas {
     // TODO: Create the game attributes here
@@ -38,7 +44,7 @@ public class Game extends Canvas {
     private boolean isRunning = false;
     private boolean isPaused = true;
 
-    private Board _board;
+    private Board _board = new Board();
     private Screen screen;
     private Frame _frame;
 
@@ -50,10 +56,8 @@ public class Game extends Canvas {
      */
     public Game(Frame frame) {
         _frame = frame;
-        _frame.setTitle(TITLE);
-
-        screen = new Screen(WIDTH, HEIGHT);
         _input = new Keyboard();
+        screen = new Screen(WIDTH, HEIGHT);
         _board = new Board(this, _input, screen);
         addKeyListener(_input);
     }

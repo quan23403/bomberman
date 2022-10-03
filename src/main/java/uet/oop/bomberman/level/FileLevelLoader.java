@@ -83,35 +83,41 @@ public class FileLevelLoader extends LevelLoader {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 int pos = x + y * getWidth();
+                Entity object;
                 char c = _map[y][x];
                 switch (c) {
                     // Thêm grass
                     case ' ':
-                        _board.addEntity(pos, new Grass(x, y, Sprite.grass));
+//                        _board.addEntity(pos, new Grass(x, y, Sprite.grass));
+                        object = new Grass(y, x, Sprite.grass.getFxImage());
                         break;
+
                     // Thêm Wall
                     case '#':
-                        _board.addEntity(pos, new Wall(x, y, Sprite.wall));
+//                        _board.addEntity(pos, new Wall(x, y, Sprite.wall));
+                        object = new Wall(y, x, Sprite.wall.getFxImage());
                         break;
+
                     // Thêm Portal
                     case 'x':
                         _board.addEntity(pos, new LayeredEntity(x, y,
-                                new Grass(x, y, Sprite.grass),
-                                new Portal(x, y, _board, Sprite.portal),
-                                new Brick(x, y, Sprite.brick)));
+                                new Grass(x, y, Sprite.grass.getFxImage()),
+                                new Portal(x, y, Sprite.portal.getFxImage()),
+                                new Brick(x, y, Sprite.brick.getFxImage())));
                         break;
                     // Thêm brick
                     case '*':
+                        object = new Brick(x, y, Sprite.brick.getFxImage());
                         _board.addEntity(x + y * _width,
                                 new LayeredEntity(x, y,
-                                        new Grass(x, y, Sprite.grass),
-                                        new Brick(x, y, Sprite.brick)
+                                        new Grass(x, y, Sprite.grass.getFxImage()),
+                                        new Brick(x, y, Sprite.brick.getFxImage())
                                 )
                         );
                         break;
                     // Thêm Bomber
                     case 'p':
-                        _board.addCharacter(new Bomber(Coordinates.tileToPixel(x), Coordinates.tileToPixel(y) + Game.TILES_SIZE, _board));
+                        _board.addCharacter(new Bomber(Coordinates.tileToPixel(x), Coordinates.tileToPixel(y) + Game.TILES_SIZE, Sprite.player_up.getFxImage()));
                         Screen.setOffset(0, 0);
                         _board.addEntity(x + y * _width, new Grass(x, y, Sprite.grass));
                         break;

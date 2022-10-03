@@ -1,19 +1,21 @@
 package uet.oop.bomberman.entities.character.enemy;
 
+import javafx.scene.image.Image;
 import uet.oop.bomberman.Board;
 import uet.oop.bomberman.Game;
 import uet.oop.bomberman.entities.Entity;
+import uet.oop.bomberman.entities.character.Character;
 import uet.oop.bomberman.graphics.Screen;
 import uet.oop.bomberman.graphics.Sprite;
-import uet.oop.bomberman.entities.character.Character;
+
 public abstract class Enemy extends Character {
     protected int _points;
 
     protected double _speed;
 //    protected AI _ai;
 
-    protected final double MAX_STEPS;
-    protected final double rest;
+    protected double MAX_STEPS;
+    protected double rest;
     protected double _steps;
 
     protected int _finalAnimation = 30;
@@ -33,26 +35,30 @@ public abstract class Enemy extends Character {
         _deadSprite = dead;
     }
 
+    public Enemy(int x, int y, Image image) {
+        super(x, y, image);
+    }
+
     @Override
     public void update() {
         animate();
 
-        if(!_alive) {
+        if (!_alive) {
             afterKill();
             return;
         }
 
-        if(_alive)
+        if (_alive)
             calculateMove();
     }
 
     @Override
     public void render(Screen screen) {
 
-        if(_alive)
+        if (_alive)
             chooseSprite();
         else {
-            if(_timeAfter > 0) {
+            if (_timeAfter > 0) {
                 _sprite = _deadSprite;
                 _animate = 0;
             } else {
@@ -61,7 +67,7 @@ public abstract class Enemy extends Character {
 
         }
 
-        screen.renderEntity((int)_x, (int)_y - _sprite.SIZE, this);
+        screen.renderEntity((int) _x, (int) _y - _sprite.SIZE, this);
     }
 
 
@@ -87,7 +93,14 @@ public abstract class Enemy extends Character {
 
     @Override
     public void kill() {
-
+//        if(!_alive) return;
+//        _alive = false;
+//
+//        _board.addPoints(_points);
+//
+//        Message msg = new Message("+" + _points, getXMessage(), getYMessage(), 2, Color.white, 14);
+//        _board.addMessage(msg);
+//        Sound.play("AA126_11");
     }
 
     @Override

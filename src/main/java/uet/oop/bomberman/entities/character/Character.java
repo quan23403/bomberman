@@ -21,7 +21,7 @@ public abstract class Character extends AnimatedEntity {
     }
 
     public Character(int x, int y, Board board) {
-        super(x, y, null);
+        super(x, y, (Image) null);
         _board = board;
     }
 
