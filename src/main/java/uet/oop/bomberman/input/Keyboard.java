@@ -1,22 +1,23 @@
 package uet.oop.bomberman.input;
 
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import javafx.scene.input.KeyCode;
 
-public class Keyboard implements KeyListener {
+
+/**
+ * Tiếp nhận và xử lý các sự kiện nhập từ bàn phím
+ */
+public class Keyboard {
 
     private final boolean[] keys = new boolean[120]; // 120 is the max number of keys
     public boolean up, down, left, right, space, enter, esc;
 
     // method to update the keys
     public void update() {
-        up = keys[KeyEvent.VK_UP] || keys[KeyEvent.VK_W];
-        down = keys[KeyEvent.VK_DOWN] || keys[KeyEvent.VK_S];
-        left = keys[KeyEvent.VK_LEFT] || keys[KeyEvent.VK_A];
-        right = keys[KeyEvent.VK_RIGHT] || keys[KeyEvent.VK_D];
-        space = keys[KeyEvent.VK_SPACE];
-        enter = keys[KeyEvent.VK_ENTER];
-        esc = keys[KeyEvent.VK_ESCAPE];
+        up = keys[KeyCode.UP.getCode()] || keys[KeyCode.W.getCode()];
+        down = keys[KeyCode.DOWN.getCode()] || keys[KeyCode.S.getCode()];
+        left = keys[KeyCode.LEFT.getCode()] || keys[KeyCode.A.getCode()];
+        right = keys[KeyCode.RIGHT.getCode()] || keys[KeyCode.D.getCode()];
+        space = keys[KeyCode.SPACE.getCode()];
     }
 
     public Keyboard() {
@@ -24,20 +25,4 @@ public class Keyboard implements KeyListener {
             keys[i] = false;
         }
     }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        keys[e.getKeyCode()] = true;
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        keys[e.getKeyCode()] = false;
-    }
-
 }
