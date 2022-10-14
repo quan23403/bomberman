@@ -2,82 +2,74 @@ package uet.oop.bomberman.entities;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
-import uet.oop.bomberman.graphics.IRender;
 import uet.oop.bomberman.graphics.Sprite;
-import uet.oop.bomberman.level.Coordinates;
+
+import java.awt.*;
 
 /**
  * Base class for all entities in the game
  */
-public abstract class Entity implements IRender {
+public abstract class Entity {
     //Tọa độ X tính từ góc trái trên trong Canvas
-    protected int _x;
+    protected int x;
 
     //Tọa độ Y tính từ góc trái trên trong Canvas
-    protected int _y;
-
-    protected boolean isRemoved = false;
+    protected int y;
 
     // ảnh của entity
-    protected Sprite _sprite;
     protected Image img;
+    protected int animated = 0;
+    protected int layer;
+    protected boolean alive;
 
-    public Entity(){
-        _sprite = Sprite.grass; //default sprite
+    public Entity() {
+
     }
+
     // Khởi tạo đối tượng, chuyển từ tọa độ đơn vị sang tọa độ trong canvas
-    public Entity( int xUnit, int yUnit, Image img) {
-        _x = xUnit * Sprite.SCALED_SIZE;
-        _y = yUnit * Sprite.SCALED_SIZE;
+    public Entity(int xUnit, int yUnit, Image img) {
+        x = xUnit * Sprite.SCALED_SIZE;
+        y = yUnit * Sprite.SCALED_SIZE;
         this.img = img;
     }
 
-    public Entity(int x, int y, Sprite sprite) {
-        _x = x;
-        _y = y;
-        _sprite = sprite;
+    public Entity(int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 
     public void render(GraphicsContext gc) {
-        gc.drawImage(img, _x, _y);
+        gc.drawImage(img, x, y);
     }
 
     public abstract void update();
 
-    /**
-     * Xử lý va chạm với Entity khác
-     *
-     * @param e
-     * @return
-     */
-    public abstract boolean collide(Entity e);
-
     // getters & setters
     public int getX() {
-        return _x;
+        return x;
     }
 
     public int getY() {
-        return _y;
+        return y;
     }
 
-    public Sprite getSprite() {
-        return _sprite;
+    public int getLayer() {
+        return layer;
     }
 
-    public int getXTile() {
-        return Coordinates.pixelToTile(_x + _sprite.SIZE / 2);
+    public void setLayer(int layer) {
+        this.layer = layer;
     }
 
-    public int getYTile(){
-        return Coordinates.pixelToTile(_y + _sprite.SIZE / 2);
+    public void setAlive(boolean alive) {
+        this.alive = alive;
     }
 
-    public boolean isRemoved() {
-        return isRemoved;
+    public Rectangle getBounds() {
+        return new Rectangle(x, y, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
     }
 
-    public void remove() {
-        isRemoved = true;
+    public boolean isAlive() {
+        return alive;
     }
 }

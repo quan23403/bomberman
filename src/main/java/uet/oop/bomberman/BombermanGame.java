@@ -2,41 +2,68 @@ package uet.oop.bomberman;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
-import javafx.scene.input.KeyEvent;
+import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
+import uet.oop.bomberman.audio.MyAudioPlayer;
 import uet.oop.bomberman.entities.Entity;
+import uet.oop.bomberman.entities.bomb.Bomb;
+import uet.oop.bomberman.entities.bomb.Flame;
 import uet.oop.bomberman.entities.character.Bomber;
-import uet.oop.bomberman.entities.character.enemy.Balloon;
-import uet.oop.bomberman.entities.character.enemy.Oneal;
-import uet.oop.bomberman.entities.tile.Grass;
-import uet.oop.bomberman.entities.tile.Portal;
-import uet.oop.bomberman.entities.tile.Wall;
-import uet.oop.bomberman.entities.tile.destroyable.Brick;
-import uet.oop.bomberman.entities.tile.destroyable.DestroyableTile;
-import uet.oop.bomberman.entities.tile.item.FlameItem;
+import uet.oop.bomberman.entities.character.enemies.*;
+import uet.oop.bomberman.entities.fixed.Grass;
+import uet.oop.bomberman.entities.fixed.Portal;
+import uet.oop.bomberman.entities.fixed.Wall;
+import uet.oop.bomberman.entities.fixed.Brick;
+import uet.oop.bomberman.entities.item.BombItem;
+import uet.oop.bomberman.entities.item.FlameItem;
+import uet.oop.bomberman.entities.item.Item;
+import uet.oop.bomberman.entities.item.SpeedItem;
 import uet.oop.bomberman.graphics.Sprite;
-import uet.oop.bomberman.sound.Sound;
 
 import java.io.BufferedReader;
+import java.awt.*;
+import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 public class BombermanGame extends Application {
 
-    public static int WIDTH = 35;
-    public static final int HEIGHT = 20;
+    public static int WIDTH = 31;
+    public static int HEIGHT = 13;
+    public static int level = 1;
 
     private GraphicsContext gc;
+    private boolean paused = false;
+    private boolean muted = false;
     private Canvas canvas;
-    private List<Entity> entities = new ArrayList<>();
-    private List<Entity> stillObjects = new ArrayList<>();
+
+    private List<String> input = new ArrayList<>();
+
+    private int xStart;
+    private int yStart;
+    public static final List<Enemy> enemies = new ArrayList<>();
+    public static final List<Entity> stillObjects = new ArrayList<>();
+    public static final List<Flame> flameList = new ArrayList<>();
+    public int startBomb = 1;
+    public int startSpeed = 2;
+    public int startFlame = 1;
+    public static Bomber myBomber;
+    public static int[][] map = new int[HEIGHT][WIDTH];
+    public static int[][] mapAStar = new int[HEIGHT][WIDTH];
+    public static MyAudioPlayer musicPlayer = new MyAudioPlayer(MyAudioPlayer.BACKGROUND_MUSIC);
+
+    public MyAudioPlayer getMusicPlayer() {
+        return musicPlayer;
+    }
+
+    public void setMusicPlayer(MyAudioPlayer _musicPlayer) {
+        musicPlayer = _musicPlayer;
+    }
 
 
     public static void main(String[] args) {
@@ -44,17 +71,14 @@ public class BombermanGame extends Application {
     }
 
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws IOException {
+
+        musicPlayer.play();
+//        load();
+        load(level);
         // Tao Canvas
         canvas = new Canvas(Sprite.SCALED_SIZE * WIDTH, Sprite.SCALED_SIZE * HEIGHT);
         gc = canvas.getGraphicsContext2D();
-
-        // Logo
-        Image icon = new Image("logo.png");
-        stage.getIcons().add(icon);
-
-        // TITLE
-        stage.setTitle("Bomberman Game");
 
         // Tao root container
         Group root = new Group();
@@ -62,212 +86,349 @@ public class BombermanGame extends Application {
 
         // Tao scene
         Scene scene = new Scene(root);
-//        scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
-//            @Override
-//            public void handle(KeyEvent keyEvent) {
-//                switch (keyEvent.getCode()) {
-//                    case UP:
-//                        Bomber.move(0, -1);
-//                        break;
-//                    case DOWN:
-//                        Bomber.getInstance().move(0, 1);
-//                        break;
-//                    case LEFT:
-//                        Bomber.getInstance().move(-1, 0);
-//                        break;
-//                    case RIGHT:
-//                        Bomber.getInstance().move(1, 0);
-//                        break;
-//                    case SPACE:
-//                        Bomber.getInstance().placeBomb();
-//                        break;
-//                }
-//            }
-//        });
 
         // Them scene vao stage
         stage.setScene(scene);
-        stage.resizableProperty().setValue(Boolean.FALSE);
+        stage.setResizable(false);
         stage.show();
 
-//        createMap();
-        createMap1();
+
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long l) {
-                render();
-                update();
+                if (!paused) {
+                    render();
+                    update();
+                } else {
+                    //halted
+                }
+                if (muted) {
+                    musicPlayer.stop();
+                } else {
+                    musicPlayer.loop();
+                }
             }
         };
         timer.start();
-
-        Sound.play();
-
-        Entity bomberman = new Bomber(1, 1, Sprite.player_right.getFxImage());
-        entities.add(bomberman);
-
-//        while (true) {
-//            Game _game = new Game(new Frame());
-//            _game.start();
-//        }
-    }
-
-    public void createMap() {
-        for (int i = 0; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                Entity object;
-                if (j == 0 || j == HEIGHT - 1 || i == 0 || i == WIDTH - 1) {
-                    object = new Wall(i, j, Sprite.wall.getFxImage());
-                } else if (i % 2 == 0 && j % 2 == 0) {
-                    object = new DestroyableTile(i, j, Sprite.brick.getFxImage());
-                } else {
-                    object = new Grass(i, j, Sprite.grass.getFxImage());
-                }
-
-                stillObjects.add(object);
+        scene.setOnKeyPressed(event -> {
+            myBomber.handleKeyPressedEvent(event.getCode());
+            if (event.getCode() == KeyCode.K) {
+                paused = !paused;
             }
-        }
+            if (event.getCode() == KeyCode.M) {
+                if (muted) {
+                    muted = false;
+                } else {
+                    muted = true;
+                }
+            }
+        });
+        scene.setOnKeyReleased(event -> myBomber.handleKeyReleasedEvent(event.getCode()));
     }
 
-    public void createMap1() {
-        char[][] _map;
-        List<String> list = new ArrayList<>();
+    public void update() {
+        // không sửa thành for each trong game không sẽ bị lỗi
+        for (int i = 0; i < enemies.size(); i++) {
+            enemies.get(i).update();
+        }
+        for (int i = 0; i < flameList.size(); i++) {
+            flameList.get(i).update();
+        }
+
+        myBomber.update();
+        List<Bomb> bombs = myBomber.getBombs();
+        for (Bomb bomb : bombs) {
+            bomb.update();
+        }
+
+        for (int i = 0; i < stillObjects.size(); i++) {
+            stillObjects.get(i).update();
+        }
+        handleCollisions();
+        checkCollisionFlame();
+    }
+
+    public void load(int _level) {
         try {
-            URL url = BombermanGame.class.getResource("/levels/Level1.txt");
+            URL url = BombermanGame.class.getResource("/levels/Level" + _level + ".txt");
             assert url != null;
             BufferedReader br = new BufferedReader(new java.io.FileReader(url.getPath()));
             String line;
             while ((line = br.readLine()) != null) {
-                list.add(line);
+                input.add(line);
             }
             br.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // get input from file
-        String[] arrays = list.get(0).trim().split(" ");
-        int _level = Integer.parseInt(arrays[0]);
-        int _height = Integer.parseInt(arrays[1]);
-        int _width = Integer.parseInt(arrays[2]);
-        _map = new char[_height][_width];
+        String[] arrays = input.get(0).trim().split(" ");
 
-        for (int i = 0; i < _height; i++) {
-            String[] array = list.get(i + 1).trim().split("");
-            for (int j = 0; j < _width; j++) {
-                _map[i][j] = list.get(i + 1).charAt(j);
+        HEIGHT = Integer.parseInt(arrays[1]);
+        WIDTH = Integer.parseInt(arrays[2]);
+        enemies.removeAll(enemies);
+        stillObjects.removeAll(stillObjects);
+        flameList.removeAll(flameList);
+
+        // print all list
+        for (String s : input) {
+            System.out.println(s);
+        }
+        createMap();
+    }
+
+    public void createMap() {
+        createMatrixCoordinates();
+
+        for (int i = 0; i < HEIGHT; i++) {
+
+            String r = input.get(i + 1);
+
+            for (int j = 0; j < WIDTH; j++) {
+
+                if (r.charAt(j) == '#') {
+                    stillObjects.add(new Wall(j, i, Sprite.wall.getFxImage()));
+                    map[i][j] = 1;
+                    mapAStar[i][j] = -1;
+                } else {
+                    stillObjects.add(new Grass(j, i, Sprite.grass.getFxImage()));
+                    if (r.charAt(j) == '*') {
+                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
+                        map[i][j] = 1;
+                        mapAStar[i][j] = -1;
+                    }
+                    if (r.charAt(j) == 'x') {
+                        stillObjects.add(new Portal(j, i, Sprite.portal.getFxImage()));
+                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
+                        map[i][j] = 1;
+                        mapAStar[i][j] = -1;
+                    }
+                    if (r.charAt(j) == '1') {
+                        enemies.add(new Balloon(j, i, Sprite.balloom_left1.getFxImage()));
+                        //map[i][j] = 0;
+                    }
+                    if (r.charAt(j) == '2') {
+//                        enemies.add(new Oneal(j, i, Sprite.oneal_left1.getFxImage(), myBomber));
+                        enemies.add(new Oneal(j, i, Sprite.oneal_left1.getFxImage()));
+                        //map[i][j] = 0;
+                    }
+                    if (r.charAt(j) == '3') {
+                        enemies.add(new Minvo(j, i, Sprite.minvo_left1.getFxImage()));
+                        //map[i][j] = 0;
+                    }
+                    if (r.charAt(j) == '4') {
+                        enemies.add(new Kondoria(j, i, Sprite.kondoria_left1.getFxImage()));
+                        //map[i][j] = 0;
+                    }
+                    if (r.charAt(j) == '5') {
+                        enemies.add(new Doll(j, i, Sprite.doll_left1.getFxImage()));
+                        //map[i][j] = 0;
+                    }
+                    if (r.charAt(j) == 'b') {
+                        stillObjects.add(new BombItem(j, i, Sprite.powerup_bombs.getFxImage()));
+                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
+                        map[i][j] = 1;
+                        mapAStar[i][j] = -1;
+                    }
+                    if (r.charAt(j) == 'f') {
+                        stillObjects.add(new FlameItem(j, i, Sprite.powerup_flames.getFxImage()));
+                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
+                        map[i][j] = 1;
+                        mapAStar[i][j] = -1;
+                    }
+                    if (r.charAt(j) == 's') {
+                        stillObjects.add(new SpeedItem(j, i, Sprite.powerup_speed.getFxImage()));
+                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
+                        map[i][j] = 1;
+                        mapAStar[i][j] = -1;
+                    }
+                    if (r.charAt(j) == 'p') {
+                        myBomber = new Bomber(j, i, Sprite.player_right.getFxImage());
+                        xStart = j;
+                        yStart = i;
+                        map[i][j] = 0;
+                        mapAStar[i][j] = 0;
+                    }
+                    if (r.charAt(j) == ' ') {
+                        map[i][j] = 0;
+                    }
+                }
             }
         }
+        stillObjects.sort(new Layer());
+    }
 
-        for (int y = 0; y < _height; y++) {
-            for (int x = 0; x < _width; x++) {
-
-                Entity object = new Grass(x, y, Sprite.grass.getFxImage());
-                char c = _map[y][x];
-                switch (c) {
-                    // Thêm grass
-
-                    // Thêm Wall
-                    case '#':
-                        object = new Wall(x, y, Sprite.wall.getFxImage());
-                        break;
-
-                    // Thêm Portal
-                    case 'x':
-                        object = new Portal(x, y, Sprite.portal.getFxImage());
-                        break;
-
-                    // Thêm brick
-                    case '*':
-                        object = new Brick(x, y, Sprite.brick.getFxImage());
-                        break;
-
-                    // Thêm Bomber
-                    case 'p':
-//                        object  = new Bomber(y, x, Sprite.)
-//                        _board.addCharacter(new Bomber(Coordinates.tileToPixel(x), Coordinates.tileToPixel(y) + Game.TILES_SIZE, Sprite.player_up.getFxImage()));
-//                        Screen.setOffset(0, 0);
-//                        _board.addEntity(x + y * _width, new Grass(x, y, Sprite.grass));
-                        break;
-
-                    // Thêm balloon
-                    case '1':
-                        object = new Balloon(x, y, Sprite.balloom_left2.getFxImage());
-//                        _board.addCharacter(new Balloon(Coordinates.tileToPixel(x), Coordinates.tileToPixel(y) + Game.TILES_SIZE, _board));
-//                        _board.addEntity(x + y * _width, new Grass(x, y, Sprite.grass));
-                        break;
-
-                    // Thêm oneal
-                    case '2':
-                        object = new Oneal(x, y, Sprite.oneal_right2.getFxImage());
-//                        _board.addCharacter(new Oneal(Coordinates.tileToPixel(x), Coordinates.tileToPixel(y) + Game.TILES_SIZE, _board));
-//                        _board.addEntity(pos, new Grass(x, y, Sprite.grass));
-                        break;
-
-//                    // Thêm doll
-//                    case '3':
-//                        _board.addCharacter(new Doll(Coordinates.tileToPixel(x), Coordinates.tileToPixel(y) + Game.TILES_SIZE, _board));
-//                        _board.addEntity(x + y * _width, new Grass(x, y, Sprite.grass));
-//                        break;
-
-//                    // Thêm BomItem
-//                    case 'b':
-//                        LayeredEntity layer = new LayeredEntity(x, y,
-//                                new Grass(x, y, Sprite.grass),
-//                                new BombItem(x, y, Sprite.powerup_bombs),
-//                                new Brick(x, y, Sprite.brick));
-//                        _board.addEntity(pos, layer);
-//                        break;
-
-//                    // Thêm SpeedItem
-//                    case 's':
-//                        layer = new LayeredEntity(x, y,
-//                                new Grass(x, y, Sprite.grass),
-//                                new SpeedItem(x, y, Sprite.powerup_speed),
-//                                new Brick(x, y, Sprite.brick));
-//                        _board.addEntity(pos, layer);
-//                        break;
-
-//                    // Thêm FlameItem
-                    case 'f':
-                        object = new FlameItem(x, y, Sprite.powerup_flames.getFxImage());
-//                        layer = new LayeredEntity(x, y,
-//                                new Grass(x, y, Sprite.grass),
-//                                new FlameItem(x, y, Sprite.powerup_flames),
-//                                new Brick(x, y, Sprite.brick));
-//                        _board.addEntity(pos, layer);
-                        break;
-
-                    default:
-                        object = new Grass(x, y, Sprite.grass.getFxImage());
-//                        _board.addEntity(pos, new Grass(x, y, Sprite.grass));
-                        break;
-
-                }
-
-                stillObjects.add(object);
-
+    public void createMatrixCoordinates() {
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++) {
+                map[i][j] = 0;
+                mapAStar[i][j] = 0;
             }
         }
     }
 
-    public void update() {
-        entities.forEach(Entity::update);
+    public void handleCollisions() {
+        List<Bomb> bombs = myBomber.getBombs();
+        Rectangle r1 = myBomber.getBounds();
+        //Bomber vs StillObjects
+        for (Entity stillObject : stillObjects) {
+            Rectangle r2 = stillObject.getBounds();
+            if (r1.intersects(r2)) {
+                if (myBomber.getLayer() == stillObject.getLayer() && stillObject instanceof Item) {
+                    if (stillObject instanceof BombItem) {
+                        startBomb++;
+                        myBomber.setBombRemain(startBomb);
+                        stillObjects.remove(stillObject);
+                        // âm thanh ăn item
+                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
+                        powerUpAudio.play();
+                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                    } else if (stillObject instanceof SpeedItem) {
+                        startSpeed += 2;
+                        myBomber.setSpeed(startSpeed);
+                        stillObjects.remove(stillObject);
+                        // âm thanh ăn item
+                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
+                        powerUpAudio.play();
+                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                    } else if (stillObject instanceof FlameItem) {
+                        startFlame++;
+                        myBomber.setRadius(startFlame);
+                        stillObjects.remove(stillObject);
+                        // âm thanh ăn item
+                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
+                        powerUpAudio.play();
+                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                    }
+                    myBomber.stay();
+                } else if (myBomber.getLayer() == stillObject.getLayer() && stillObject instanceof Portal) {
+                    if (enemies.size() == 0) {
+                        //pass level
+                        load(++level);
+                        // âm thanh ăn item
+                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
+                        powerUpAudio.play();
+                    }
+                } else if (myBomber.getLayer() >= stillObject.getLayer()) {
+                    myBomber.move();
+                } else {
+                    myBomber.stay();
+                }
+                break;
+            }
+        }
+        //Bomber vs Enemies
+        for (Enemy enemy : enemies) {
+            Rectangle r2 = enemy.getBounds();
+            if (r1.intersects(r2)) {
+                myBomber.setAlive(false);
+                startBomb = 1;
+                startFlame = 1;
+                startSpeed = 1;
+                if (!myBomber.isAlive()) {
+                    Timer count = new Timer();
+                    count.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            myBomber = new Bomber(xStart, yStart, Sprite.player_right.getFxImage());
+                            count.cancel();
+                        }
+                    }, 500, 1);
+                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.DEAD);
+                    powerUpAudio.play();
+
+                }
+//                myBomber.setCoordinate(2,1);
+            }
+        }
+        //Enemies vs Bombs
+        for (Enemy enemy : enemies) {
+            Rectangle r2 = enemy.getBounds();
+            for (Bomb bomb : bombs) {
+                Rectangle r3 = bomb.getBounds();
+                if (!bomb.isAllowedToPassThrough(enemy) && r2.intersects(r3)) {
+                    enemy.stay();
+                    break;
+                }
+            }
+        }
+
+        //Enemies vs StillObjects
+        for (Enemy enemy : enemies) {
+            Rectangle r2 = enemy.getBounds();
+            for (Entity stillObject : stillObjects) {
+                Rectangle r3 = stillObject.getBounds();
+                if (r2.intersects(r3)) {
+                    if (enemy.getLayer() >= stillObject.getLayer()) {
+                        enemy.move();
+                    } else {
+                        enemy.stay();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public void checkCollisionFlame() {
+        //if(explosionList != null){
+        for (Flame flame : flameList) {
+            Rectangle r1 = flame.getBounds();
+            for (Entity stillObject : stillObjects) {
+                Rectangle r2 = stillObject.getBounds();
+                if (r1.intersects(r2) && !(stillObject instanceof Item)) {
+                    stillObject.setAlive(false);
+                    map[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;
+                    mapAStar[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;
+                }
+            }
+            for (Enemy enemy : enemies) {
+                Rectangle r2 = enemy.getBounds();
+                if (r1.intersects(r2)) {
+                    enemy.setAlive(false);
+                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.ENEMY_DEAD);
+                    powerUpAudio.play();
+                }
+            }
+            Rectangle r2 = myBomber.getBounds();
+            if (r1.intersects(r2)) {
+                myBomber.setAlive(false);
+                startBomb = 1;
+                startFlame = 1;
+                startSpeed = 1;
+                if (!myBomber.isAlive()) {
+                    Timer count = new Timer();
+                    count.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            myBomber = new Bomber(xStart, yStart, Sprite.player_right.getFxImage());
+                            count.cancel();
+                        }
+                    }, 500, 1);
+                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.DEAD);
+                    powerUpAudio.play();
+
+                }
+
+                //createMap();
+            }
+        }
     }
 
     public void render() {
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
-//        stillObjects.forEach(g -> g.render(gc));
-//        entities.forEach(g -> g.render(gc));
-        assert stillObjects != null;
-        for (Entity stillObject : stillObjects) {
-            assert stillObject != null;
-            stillObject.render(gc);
+        for (int i = stillObjects.size() - 1; i >= 0; i--) {
+            stillObjects.get(i).render(gc);
         }
-        assert entities != null;
-        for (Entity entity : entities) {
-            assert entity != null;
-            entity.render(gc);
+        enemies.forEach(g -> g.render(gc));
+        List<Bomb> bombs = myBomber.getBombs();
+        for (Bomb bomb : bombs) {
+            bomb.render(gc);
         }
+        myBomber.render(gc);
+        flameList.forEach(g -> g.render(gc));
     }
 }
