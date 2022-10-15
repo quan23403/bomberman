@@ -1,5 +1,11 @@
 # Bài tập lớn OOP - Bomberman Game
 
+## Contributors
+
+- [Vũ Hoàng-Long (21021515) - K66-TCLC](https://github.com/long0508yt)
+- [Hoàng Minh-Quân (21021533) - K66-TCLC](https://github.com/quan23403)
+
+## Mô tả 
 Trong bài tập lớn này, nhiệm vụ của bạn là viết một phiên bản Java mô phỏng lại trò chơi [Bomberman](https://www.youtube.com/watch?v=mKIOVwqgSXM) kinh điển của NES.
 
 <img src="src/main/resources/demo.png" alt="drawing" width="400"/>
