@@ -6,6 +6,7 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 import uet.oop.bomberman.audio.MyAudioPlayer;
@@ -47,7 +48,7 @@ public class BombermanGame extends Application {
     private int xStart;
     private int yStart;
     public static final List<Enemy> enemies = new ArrayList<>();
-    public static final List<Entity> stillObjects = new ArrayList<>();
+    public static List<Entity> stillObjects = new ArrayList<>();
     public static final List<Flame> flameList = new ArrayList<>();
     public int startBomb = 1;
     public int startSpeed = 2;
@@ -87,8 +88,13 @@ public class BombermanGame extends Application {
         // Tao scene
         Scene scene = new Scene(root);
 
+
         // Them scene vao stage
         stage.setScene(scene);
+        stage.setTitle("Bomberman Game");
+
+
+//        stage.getIcons().add(img);
         stage.setResizable(false);
         stage.show();
 
@@ -171,9 +177,9 @@ public class BombermanGame extends Application {
         flameList.removeAll(flameList);
 
         // print all list
-        for (String s : input) {
-            System.out.println(s);
-        }
+//        for (String s : input) {
+//            System.out.println(s);
+//        }
         createMap();
     }
 
@@ -270,6 +276,7 @@ public class BombermanGame extends Application {
     public void handleCollisions() {
         List<Bomb> bombs = myBomber.getBombs();
         Rectangle r1 = myBomber.getBounds();
+
         //Bomber vs StillObjects
         for (Entity stillObject : stillObjects) {
             Rectangle r2 = stillObject.getBounds();
@@ -278,36 +285,31 @@ public class BombermanGame extends Application {
                     if (stillObject instanceof BombItem) {
                         startBomb++;
                         myBomber.setBombRemain(startBomb);
-                        stillObjects.remove(stillObject);
-                        // âm thanh ăn item
-                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
-                        powerUpAudio.play();
-                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
-                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
                     } else if (stillObject instanceof SpeedItem) {
                         startSpeed += 2;
                         myBomber.setSpeed(startSpeed);
-                        stillObjects.remove(stillObject);
-                        // âm thanh ăn item
-                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
-                        powerUpAudio.play();
-                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
-                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
                     } else if (stillObject instanceof FlameItem) {
                         startFlame++;
                         myBomber.setRadius(startFlame);
-                        stillObjects.remove(stillObject);
-                        // âm thanh ăn item
-                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
-                        powerUpAudio.play();
-                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
-                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
                     }
+
+                    stillObjects.remove(stillObject);
+                    // âm thanh ăn item
+                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
+                    powerUpAudio.play();
+                    map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
+                    mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;
                     myBomber.stay();
                 } else if (myBomber.getLayer() == stillObject.getLayer() && stillObject instanceof Portal) {
                     if (enemies.size() == 0) {
-                        //pass level
-                        load(++level);
+                        // load next level
+
+                        level++;
+                        if (level > 4) {
+                            level = 0;
+                        }
+                        load(level);
+
                         // âm thanh ăn item
                         MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
                         powerUpAudio.play();
@@ -410,9 +412,7 @@ public class BombermanGame extends Application {
                     }, 500, 1);
                     MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.DEAD);
                     powerUpAudio.play();
-
                 }
-
                 //createMap();
             }
         }
