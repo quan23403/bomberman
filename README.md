@@ -8,7 +8,7 @@
 ## Mô tả 
 Trong bài tập lớn này, nhiệm vụ của bạn là viết một phiên bản Java mô phỏng lại trò chơi [Bomberman](https://www.youtube.com/watch?v=mKIOVwqgSXM) kinh điển của NES.
 
-<img src="src/main/resources/demo.png" alt="drawing" width="400"/>
+<img src="src/main/resources/view/demo.png" alt="drawing" width="400"/>
 
 Bạn có thể sử dụng mã nguồn tại repository này để phát triển hoặc tự phát triển từ đầu.
 
@@ -71,3 +71,11 @@ Xem comment ở starter project
 3. Xử lý hiệu ứng âm thanh (thêm music & sound effects) +1đ
 4. Phát triển hệ thống server-client để nhiều người có thể cùng chơi qua mạng LAN hoặc Internet +1đ
 5. Những ý tưởng khác sẽ được đánh giá và cộng điểm theo mức tương ứng
+
+## Technologies
+- JavaAwt, JavaFX
+- Maven
+- IntelliJ IDEA
+
+## UML Class Diagram
+![](src/main/resources/view/uml.png)
