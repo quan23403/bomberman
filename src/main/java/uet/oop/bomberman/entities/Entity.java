@@ -66,7 +66,7 @@ public abstract class Entity {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
+        return new Rectangle(x, y, Sprite.SCALED_SIZE - 2, Sprite.SCALED_SIZE -2);
     }
 
     public boolean isAlive() {

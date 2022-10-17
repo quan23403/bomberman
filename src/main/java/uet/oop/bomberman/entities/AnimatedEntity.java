@@ -53,7 +53,7 @@ public abstract class AnimatedEntity extends Entity {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(desX, desY, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
+        return new Rectangle(desX, desY , Sprite.SCALED_SIZE -1 , Sprite.SCALED_SIZE -1 );
     }
 
     protected void animate() {
