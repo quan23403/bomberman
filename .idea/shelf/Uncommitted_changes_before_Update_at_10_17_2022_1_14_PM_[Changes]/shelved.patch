@@ -1,0 +1,754 @@
+Index: src/main/java/uet/oop/bomberman/BombermanGame.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package uet.oop.bomberman;\r\n\r\nimport javafx.animation.AnimationTimer;\r\nimport javafx.application.Application;\r\nimport javafx.scene.Group;\r\nimport javafx.scene.Scene;\r\nimport javafx.scene.canvas.Canvas;\r\nimport javafx.scene.canvas.GraphicsContext;\r\nimport javafx.scene.input.KeyCode;\r\nimport javafx.stage.Stage;\r\nimport uet.oop.bomberman.audio.MyAudioPlayer;\r\nimport uet.oop.bomberman.entities.Entity;\r\nimport uet.oop.bomberman.entities.bomb.Bomb;\r\nimport uet.oop.bomberman.entities.bomb.Flame;\r\nimport uet.oop.bomberman.entities.character.Bomber;\r\nimport uet.oop.bomberman.entities.character.enemies.*;\r\nimport uet.oop.bomberman.entities.fixed.Grass;\r\nimport uet.oop.bomberman.entities.fixed.Portal;\r\nimport uet.oop.bomberman.entities.fixed.Wall;\r\nimport uet.oop.bomberman.entities.fixed.Brick;\r\nimport uet.oop.bomberman.entities.item.BombItem;\r\nimport uet.oop.bomberman.entities.item.FlameItem;\r\nimport uet.oop.bomberman.entities.item.Item;\r\nimport uet.oop.bomberman.entities.item.SpeedItem;\r\nimport uet.oop.bomberman.graphics.Sprite;\r\n\r\nimport java.io.BufferedReader;\r\nimport java.awt.*;\r\nimport java.io.IOException;\r\nimport java.net.URL;\r\nimport java.util.*;\r\nimport java.util.List;\r\n\r\npublic class BombermanGame extends Application {\r\n\r\n    public static int WIDTH = 31;\r\n    public static int HEIGHT = 13;\r\n    public static int level = 1;\r\n\r\n    private GraphicsContext gc;\r\n    private boolean paused = false;\r\n    private boolean muted = false;\r\n    private Canvas canvas;\r\n\r\n    private List<String> input = new ArrayList<>();\r\n\r\n    private int xStart;\r\n    private int yStart;\r\n    public static final List<Enemy> enemies = new ArrayList<>();\r\n    public static final List<Entity> stillObjects = new ArrayList<>();\r\n    public static final List<Flame> flameList = new ArrayList<>();\r\n    public int startBomb = 1;\r\n    public int startSpeed = 2;\r\n    public int startFlame = 1;\r\n    public static Bomber myBomber;\r\n    public static int[][] map = new int[HEIGHT][WIDTH];\r\n    public static int[][] mapAStar = new int[HEIGHT][WIDTH];\r\n    public static MyAudioPlayer musicPlayer = new MyAudioPlayer(MyAudioPlayer.BACKGROUND_MUSIC);\r\n\r\n    public MyAudioPlayer getMusicPlayer() {\r\n        return musicPlayer;\r\n    }\r\n\r\n    public void setMusicPlayer(MyAudioPlayer _musicPlayer) {\r\n        musicPlayer = _musicPlayer;\r\n    }\r\n\r\n\r\n    public static void main(String[] args) {\r\n        Application.launch(BombermanGame.class);\r\n    }\r\n\r\n    @Override\r\n    public void start(Stage stage) throws IOException {\r\n\r\n        musicPlayer.play();\r\n//        load();\r\n        load(level);\r\n        // Tao Canvas\r\n        canvas = new Canvas(Sprite.SCALED_SIZE * WIDTH, Sprite.SCALED_SIZE * HEIGHT);\r\n        gc = canvas.getGraphicsContext2D();\r\n\r\n        // Tao root container\r\n        Group root = new Group();\r\n        root.getChildren().add(canvas);\r\n\r\n        // Tao scene\r\n        Scene scene = new Scene(root);\r\n\r\n        // Them scene vao stage\r\n        stage.setScene(scene);\r\n        stage.setResizable(false);\r\n        stage.show();\r\n\r\n\r\n        AnimationTimer timer = new AnimationTimer() {\r\n            @Override\r\n            public void handle(long l) {\r\n                if (!paused) {\r\n                    render();\r\n                    update();\r\n                } else {\r\n                    //halted\r\n                }\r\n                if (muted) {\r\n                    musicPlayer.stop();\r\n                } else {\r\n                    musicPlayer.loop();\r\n                }\r\n            }\r\n        };\r\n        timer.start();\r\n        scene.setOnKeyPressed(event -> {\r\n            myBomber.handleKeyPressedEvent(event.getCode());\r\n            if (event.getCode() == KeyCode.K) {\r\n                paused = !paused;\r\n            }\r\n            if (event.getCode() == KeyCode.M) {\r\n                if (muted) {\r\n                    muted = false;\r\n                } else {\r\n                    muted = true;\r\n                }\r\n            }\r\n        });\r\n        scene.setOnKeyReleased(event -> myBomber.handleKeyReleasedEvent(event.getCode()));\r\n    }\r\n\r\n    public void update() {\r\n        // không sửa thành for each trong game không sẽ bị lỗi\r\n        for (int i = 0; i < enemies.size(); i++) {\r\n            enemies.get(i).update();\r\n        }\r\n        for (int i = 0; i < flameList.size(); i++) {\r\n            flameList.get(i).update();\r\n        }\r\n\r\n        myBomber.update();\r\n        List<Bomb> bombs = myBomber.getBombs();\r\n        for (Bomb bomb : bombs) {\r\n            bomb.update();\r\n        }\r\n\r\n        for (int i = 0; i < stillObjects.size(); i++) {\r\n            stillObjects.get(i).update();\r\n        }\r\n        handleCollisions();\r\n        checkCollisionFlame();\r\n    }\r\n\r\n    public void load(int _level) {\r\n        try {\r\n            URL url = BombermanGame.class.getResource(\"/levels/Level\" + _level + \".txt\");\r\n            assert url != null;\r\n            BufferedReader br = new BufferedReader(new java.io.FileReader(url.getPath()));\r\n            String line;\r\n            while ((line = br.readLine()) != null) {\r\n                input.add(line);\r\n            }\r\n            br.close();\r\n        } catch (Exception e) {\r\n            e.printStackTrace();\r\n        }\r\n\r\n        String[] arrays = input.get(0).trim().split(\" \");\r\n\r\n        HEIGHT = Integer.parseInt(arrays[1]);\r\n        WIDTH = Integer.parseInt(arrays[2]);\r\n        enemies.removeAll(enemies);\r\n        stillObjects.removeAll(stillObjects);\r\n        flameList.removeAll(flameList);\r\n\r\n        // print all list\r\n        for (String s : input) {\r\n            System.out.println(s);\r\n        }\r\n        createMap();\r\n    }\r\n\r\n    public void createMap() {\r\n        createMatrixCoordinates();\r\n\r\n        for (int i = 0; i < HEIGHT; i++) {\r\n\r\n            String r = input.get(i + 1);\r\n\r\n            for (int j = 0; j < WIDTH; j++) {\r\n\r\n                if (r.charAt(j) == '#') {\r\n                    stillObjects.add(new Wall(j, i, Sprite.wall.getFxImage()));\r\n                    map[i][j] = 1;\r\n                    mapAStar[i][j] = -1;\r\n                } else {\r\n                    stillObjects.add(new Grass(j, i, Sprite.grass.getFxImage()));\r\n                    if (r.charAt(j) == '*') {\r\n                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));\r\n                        map[i][j] = 1;\r\n                        mapAStar[i][j] = -1;\r\n                    }\r\n                    if (r.charAt(j) == 'x') {\r\n                        stillObjects.add(new Portal(j, i, Sprite.portal.getFxImage()));\r\n                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));\r\n                        map[i][j] = 1;\r\n                        mapAStar[i][j] = -1;\r\n                    }\r\n                    if (r.charAt(j) == '1') {\r\n                        enemies.add(new Balloon(j, i, Sprite.balloom_left1.getFxImage()));\r\n                        //map[i][j] = 0;\r\n                    }\r\n                    if (r.charAt(j) == '2') {\r\n//                        enemies.add(new Oneal(j, i, Sprite.oneal_left1.getFxImage(), myBomber));\r\n                        enemies.add(new Oneal(j, i, Sprite.oneal_left1.getFxImage()));\r\n                        //map[i][j] = 0;\r\n                    }\r\n                    if (r.charAt(j) == '3') {\r\n                        enemies.add(new Minvo(j, i, Sprite.minvo_left1.getFxImage()));\r\n                        //map[i][j] = 0;\r\n                    }\r\n                    if (r.charAt(j) == '4') {\r\n                        enemies.add(new Kondoria(j, i, Sprite.kondoria_left1.getFxImage()));\r\n                        //map[i][j] = 0;\r\n                    }\r\n                    if (r.charAt(j) == '5') {\r\n                        enemies.add(new Doll(j, i, Sprite.doll_left1.getFxImage()));\r\n                        //map[i][j] = 0;\r\n                    }\r\n                    if (r.charAt(j) == 'b') {\r\n                        stillObjects.add(new BombItem(j, i, Sprite.powerup_bombs.getFxImage()));\r\n                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));\r\n                        map[i][j] = 1;\r\n                        mapAStar[i][j] = -1;\r\n                    }\r\n                    if (r.charAt(j) == 'f') {\r\n                        stillObjects.add(new FlameItem(j, i, Sprite.powerup_flames.getFxImage()));\r\n                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));\r\n                        map[i][j] = 1;\r\n                        mapAStar[i][j] = -1;\r\n                    }\r\n                    if (r.charAt(j) == 's') {\r\n                        stillObjects.add(new SpeedItem(j, i, Sprite.powerup_speed.getFxImage()));\r\n                        stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));\r\n                        map[i][j] = 1;\r\n                        mapAStar[i][j] = -1;\r\n                    }\r\n                    if (r.charAt(j) == 'p') {\r\n                        myBomber = new Bomber(j, i, Sprite.player_right.getFxImage());\r\n                        xStart = j;\r\n                        yStart = i;\r\n                        map[i][j] = 0;\r\n                        mapAStar[i][j] = 0;\r\n                    }\r\n                    if (r.charAt(j) == ' ') {\r\n                        map[i][j] = 0;\r\n                    }\r\n                }\r\n            }\r\n        }\r\n        stillObjects.sort(new Layer());\r\n    }\r\n\r\n    public void createMatrixCoordinates() {\r\n        for (int i = 0; i < HEIGHT; i++) {\r\n            for (int j = 0; j < WIDTH; j++) {\r\n                map[i][j] = 0;\r\n                mapAStar[i][j] = 0;\r\n            }\r\n        }\r\n    }\r\n\r\n    public void handleCollisions() {\r\n        List<Bomb> bombs = myBomber.getBombs();\r\n        Rectangle r1 = myBomber.getBounds();\r\n        //Bomber vs StillObjects\r\n        for (Entity stillObject : stillObjects) {\r\n            Rectangle r2 = stillObject.getBounds();\r\n            if (r1.intersects(r2)) {\r\n                if (myBomber.getLayer() == stillObject.getLayer() && stillObject instanceof Item) {\r\n                    if (stillObject instanceof BombItem) {\r\n                        startBomb++;\r\n                        myBomber.setBombRemain(startBomb);\r\n                        stillObjects.remove(stillObject);\r\n                        // âm thanh ăn item\r\n                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);\r\n                        powerUpAudio.play();\r\n                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;\r\n                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;\r\n                    } else if (stillObject instanceof SpeedItem) {\r\n                        startSpeed += 2;\r\n                        myBomber.setSpeed(startSpeed);\r\n                        stillObjects.remove(stillObject);\r\n                        // âm thanh ăn item\r\n                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);\r\n                        powerUpAudio.play();\r\n                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;\r\n                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;\r\n                    } else if (stillObject instanceof FlameItem) {\r\n                        startFlame++;\r\n                        myBomber.setRadius(startFlame);\r\n                        stillObjects.remove(stillObject);\r\n                        // âm thanh ăn item\r\n                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);\r\n                        powerUpAudio.play();\r\n                        map[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;\r\n                        mapAStar[myBomber.getY() / Sprite.SCALED_SIZE][myBomber.getX() / Sprite.SCALED_SIZE] = 0;\r\n                    }\r\n                    myBomber.stay();\r\n                } else if (myBomber.getLayer() == stillObject.getLayer() && stillObject instanceof Portal) {\r\n                    if (enemies.size() == 0) {\r\n                        //pass level\r\n                        load(++level);\r\n                        // âm thanh ăn item\r\n                        MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);\r\n                        powerUpAudio.play();\r\n                    }\r\n                } else if (myBomber.getLayer() >= stillObject.getLayer()) {\r\n                    myBomber.move();\r\n                } else {\r\n                    myBomber.stay();\r\n                }\r\n                break;\r\n            }\r\n        }\r\n        //Bomber vs Enemies\r\n        for (Enemy enemy : enemies) {\r\n            Rectangle r2 = enemy.getBounds();\r\n            if (r1.intersects(r2)) {\r\n                myBomber.setAlive(false);\r\n                startBomb = 1;\r\n                startFlame = 1;\r\n                startSpeed = 1;\r\n                if (!myBomber.isAlive()) {\r\n                    Timer count = new Timer();\r\n                    count.schedule(new TimerTask() {\r\n                        @Override\r\n                        public void run() {\r\n                            myBomber = new Bomber(xStart, yStart, Sprite.player_right.getFxImage());\r\n                            count.cancel();\r\n                        }\r\n                    }, 500, 1);\r\n                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.DEAD);\r\n                    powerUpAudio.play();\r\n\r\n                }\r\n//                myBomber.setCoordinate(2,1);\r\n            }\r\n        }\r\n        //Enemies vs Bombs\r\n        for (Enemy enemy : enemies) {\r\n            Rectangle r2 = enemy.getBounds();\r\n            for (Bomb bomb : bombs) {\r\n                Rectangle r3 = bomb.getBounds();\r\n                if (!bomb.isAllowedToPassThrough(enemy) && r2.intersects(r3)) {\r\n                    enemy.stay();\r\n                    break;\r\n                }\r\n            }\r\n        }\r\n\r\n        //Enemies vs StillObjects\r\n        for (Enemy enemy : enemies) {\r\n            Rectangle r2 = enemy.getBounds();\r\n            for (Entity stillObject : stillObjects) {\r\n                Rectangle r3 = stillObject.getBounds();\r\n                if (r2.intersects(r3)) {\r\n                    if (enemy.getLayer() >= stillObject.getLayer()) {\r\n                        enemy.move();\r\n                    } else {\r\n                        enemy.stay();\r\n                    }\r\n                    break;\r\n                }\r\n            }\r\n        }\r\n    }\r\n\r\n    public void checkCollisionFlame() {\r\n        //if(explosionList != null){\r\n        for (Flame flame : flameList) {\r\n            Rectangle r1 = flame.getBounds();\r\n            for (Entity stillObject : stillObjects) {\r\n                Rectangle r2 = stillObject.getBounds();\r\n                if (r1.intersects(r2) && !(stillObject instanceof Item)) {\r\n                    stillObject.setAlive(false);\r\n                    map[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;\r\n                    mapAStar[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;\r\n                }\r\n            }\r\n            for (Enemy enemy : enemies) {\r\n                Rectangle r2 = enemy.getBounds();\r\n                if (r1.intersects(r2)) {\r\n                    enemy.setAlive(false);\r\n                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.ENEMY_DEAD);\r\n                    powerUpAudio.play();\r\n                }\r\n            }\r\n            Rectangle r2 = myBomber.getBounds();\r\n            if (r1.intersects(r2)) {\r\n                myBomber.setAlive(false);\r\n                startBomb = 1;\r\n                startFlame = 1;\r\n                startSpeed = 1;\r\n                if (!myBomber.isAlive()) {\r\n                    Timer count = new Timer();\r\n                    count.schedule(new TimerTask() {\r\n                        @Override\r\n                        public void run() {\r\n                            myBomber = new Bomber(xStart, yStart, Sprite.player_right.getFxImage());\r\n                            count.cancel();\r\n                        }\r\n                    }, 500, 1);\r\n                    MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.DEAD);\r\n                    powerUpAudio.play();\r\n\r\n                }\r\n\r\n                //createMap();\r\n            }\r\n        }\r\n    }\r\n\r\n    public void render() {\r\n        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());\r\n        for (int i = stillObjects.size() - 1; i >= 0; i--) {\r\n            stillObjects.get(i).render(gc);\r\n        }\r\n        enemies.forEach(g -> g.render(gc));\r\n        List<Bomb> bombs = myBomber.getBombs();\r\n        for (Bomb bomb : bombs) {\r\n            bomb.render(gc);\r\n        }\r\n        myBomber.render(gc);\r\n        flameList.forEach(g -> g.render(gc));\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/BombermanGame.java b/src/main/java/uet/oop/bomberman/BombermanGame.java
+--- a/src/main/java/uet/oop/bomberman/BombermanGame.java	(revision d1e7121f9e3047b3812de16431217e21c134fbab)
++++ b/src/main/java/uet/oop/bomberman/BombermanGame.java	(date 1665817344881)
+@@ -66,9 +66,9 @@
+     }
+ 
+ 
+-    public static void main(String[] args) {
+-        Application.launch(BombermanGame.class);
+-    }
++//    public static void main(String[] args) {
++//        Application.launch(BombermanGame.class);
++//    }
+ 
+     @Override
+     public void start(Stage stage) throws IOException {
+Index: src/main/java/uet/oop/bomberman/Menu/ViewManager.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/Menu/ViewManager.java b/src/main/java/uet/oop/bomberman/Menu/ViewManager.java
+new file mode 100644
+--- /dev/null	(date 1665938817805)
++++ b/src/main/java/uet/oop/bomberman/Menu/ViewManager.java	(date 1665938817805)
+@@ -0,0 +1,311 @@
++package uet.oop.bomberman.Menu;
++
++
++import javafx.application.Application;
++import javafx.event.ActionEvent;
++import javafx.event.EventHandler;
++import javafx.scene.Scene;
++import javafx.scene.effect.DropShadow;
++import javafx.scene.image.Image;
++import javafx.scene.image.ImageView;
++import javafx.scene.input.MouseDragEvent;
++import javafx.scene.input.MouseEvent;
++import javafx.scene.layout.*;
++import javafx.stage.Stage;
++import uet.oop.bomberman.BombermanGame;
++
++import java.io.IOException;
++import java.util.ArrayList;
++import java.util.List;
++
++
++
++public class ViewManager {
++    private static final int WIDTH = 1024;
++    private static final int HEIGHT = 768;
++    private AnchorPane mainPane;
++    private Scene mainScene;
++    private Stage mainStage;
++
++    private final static  int MENU_BUTTONS_START_X = 100;
++    private final static  int MENU_BUTTONS_START_Y = 200;
++
++    //private BombermanSubscene credistsSubscene;
++    private BombermanSubscene helpSubscene;
++    private BombermanSubscene scoreSubscene;
++    private BombermanSubscene shipChooserScene;
++
++    private BombermanSubscene sceneToHide;
++
++    List<BombermanButton> menuButtons;
++    //List<ShipPicker>  shipsList;
++    //private SHIP choosenShip;
++
++    public ViewManager(){
++        menuButtons = new ArrayList<>();
++        mainPane = new AnchorPane();
++        mainScene = new Scene(mainPane,WIDTH,HEIGHT);
++        mainStage = new Stage();
++        mainStage.setScene(mainScene);
++        createSubScenes();
++        createButtons();
++        createBackground();
++        createLogo();
++    }
++
++    private void showSubScene(BombermanSubscene subScene) {
++        if( sceneToHide == subScene) {
++            sceneToHide.moveSubScene();
++        }
++        else if (sceneToHide == null){
++            //sceneToHide.moveSubScene();
++            subScene.moveSubScene();
++            sceneToHide = subScene;
++        }
++        else {
++            if(sceneToHide.isHidden != true)
++                sceneToHide.moveSubScene();
++            subScene.moveSubScene();
++            sceneToHide = subScene;
++        }
++    }
++    private void addMenuButton(BombermanButton button) {
++        button.setLayoutX(MENU_BUTTONS_START_X);
++        button.setLayoutY(MENU_BUTTONS_START_Y + menuButtons.size() * 120);
++        menuButtons.add(button);
++        mainPane.getChildren().add(button);
++    }
++
++    public Stage getMainStage() {
++        return mainStage;
++    }
++
++    private void createButtons() {
++        //createLogo();
++        createStartButtons();
++        createScoreButtons();
++        createBackground();
++        //createCreditsButton();
++        createHelpButton();
++        createExitButton();
++    }
++
++    private void createSubScenes() {
++//        credistsSubscene = new BombermanSubscene();
++//        mainPane.getChildren().add(credistsSubscene);
++
++        helpSubscene = new BombermanSubscene();
++        mainPane.getChildren().add(helpSubscene);
++
++        createInstructionSubscene();
++
++        scoreSubscene = new BombermanSubscene();
++        mainPane.getChildren().add(scoreSubscene);
++
++//        shipChooserScene = new BombermanSubscene();
++//        mainPane.getChildren().add(shipChooserScene);
++
++        //createShipChooserSubScene();
++    }
++//    private  void createShipChooserSubScene() {
++//        shipChooserScene = new BombermanSubscene();
++//        mainPane.getChildren().add(shipChooserScene);
++//
++//        InfoLabel chooseShipLabel = new InfoLabel("CHOOSE YOUR SHIP");
++//        chooseShipLabel.setLayoutX(110);
++//        chooseShipLabel.setLayoutY(25);
++//        shipChooserScene.getPane().getChildren().add(chooseShipLabel);
++//        shipChooserScene.getPane().getChildren().add(createShipToChoose());
++//        shipChooserScene.getPane().getChildren().add(createButtonToStart());
++//    }
++
++//    private HBox createShipToChoose() {
++//        HBox box = new HBox();
++//        box.setSpacing(40);
++//        shipsList = new ArrayList<>();
++//        for(SHIP ship : SHIP.values()) {
++//            ShipPicker shipToPick = new ShipPicker(ship);
++//            shipsList.add(shipToPick);
++//            box.getChildren().add(shipToPick);
++//            shipToPick.setOnMouseClicked(new EventHandler<MouseEvent>() {
++//                @Override
++//                public void handle(MouseEvent event) {
++//                    for (ShipPicker ship : shipsList) {
++//                        ship.setIsCircleChoosen(false);
++//                    }
++//                    shipToPick.setIsCircleChoosen(true);
++//                    choosenShip = shipToPick.getShip();
++//                }
++//            });
++//        }
++//        box.setLayoutX(300 - (118*2) + 50);
++//        box.setLayoutY(100);
++//        return box;
++//    }
++
++    //    private BombermanButton createButtonToStart() {
++//        BombermanButton startButton = new BombermanButton("START");
++//        startButton.setLayoutX(350);
++//        startButton.setLayoutY(300);
++//
++//        startButton.setOnAction(new EventHandler<ActionEvent>() {
++//            @Override
++//            public void handle(ActionEvent event) {
++//                if(choosenShip != null) {
++//                    GameViewManager gameManager = new GameViewManager();
++//                    gameManager.createNewGame(mainStage, choosenShip);
++//                }
++//            }
++//        });
++//        return startButton;
++//    }
++    private void createInstructionSubscene() {
++        helpSubscene = new BombermanSubscene();
++        mainPane.getChildren().add(helpSubscene);
++
++        ImageView moveUpButton = new ImageView("lineLight24.png");
++        moveUpButton.setFitHeight(40);
++        moveUpButton.setFitWidth(40);
++        ImageView moveDownButton = new ImageView("lineLight25.png");
++        moveDownButton.setFitHeight(40);
++        moveDownButton.setFitWidth(40);
++        ImageView moveLeftButton = new ImageView("lineLight22.png");
++        moveLeftButton.setFitHeight(40);
++        moveLeftButton.setFitWidth(40);
++        ImageView moveRightButton = new ImageView("lineLight23.png");
++        moveRightButton.setFitHeight(40);
++        moveRightButton.setFitWidth(40);
++
++        BombermanButton setBombButton = new BombermanButton();
++        setBombButton.setText("SPACE");
++        setBombButton.setPrefHeight(40);
++        setBombButton.setPrefWidth(80);
++
++        InfoLabel moveUp = new InfoLabel("     : Di chuyen len");
++        InfoLabel moveDown = new InfoLabel("    : Di chuyen xuong");
++        InfoLabel moveLeft = new InfoLabel("    : Di chuyen sang trai");
++        InfoLabel moveRight = new InfoLabel("    : Di chuyen phai");
++        InfoLabel setBomb = new InfoLabel("    : An de dat bom");
++
++        moveUp.setXY(140, 30);
++        moveDown.setXY(140, (int)moveUp.getLayoutY() + 55);
++        moveLeft.setXY(140,(int)moveDown.getLayoutY() + 55);
++        moveRight.setXY(140, (int)moveLeft.getLayoutY() + 55);
++        setBomb.setXY(140, (int)moveRight.getLayoutY() + 55);
++
++        moveUpButton.setLayoutX(80);
++        moveUpButton.setLayoutY(moveUp.getLayoutY());
++        moveDownButton.setLayoutX(80);
++        moveDownButton.setLayoutY(moveDown.getLayoutY());
++        moveLeftButton.setLayoutX(80);
++        moveLeftButton.setLayoutY(moveLeft.getLayoutY());
++        moveRightButton.setLayoutX(80);
++        moveRightButton.setLayoutY(moveRight.getLayoutY());
++
++        setBombButton.setXY_Button(40, setBomb.getLayoutY());
++
++        helpSubscene.getPane().getChildren().add(moveUp);
++        helpSubscene.getPane().getChildren().add(moveDown);
++        helpSubscene.getPane().getChildren().add(moveLeft);
++        helpSubscene.getPane().getChildren().add(moveRight);
++        helpSubscene.getPane().getChildren().add(setBomb);
++
++        helpSubscene.getPane().getChildren().add(moveUpButton);
++        helpSubscene.getPane().getChildren().add(moveDownButton);
++        helpSubscene.getPane().getChildren().add(moveLeftButton);
++        helpSubscene.getPane().getChildren().add(moveRightButton);
++        helpSubscene.getPane().getChildren().add(setBombButton);
++    }
++    private void createStartButtons() {
++        BombermanButton startButton = new BombermanButton("Play");
++        addMenuButton(startButton);
++
++        startButton.setOnAction(new EventHandler<ActionEvent>() {
++            @Override
++            public void handle(ActionEvent event) {
++                BombermanGame game = new BombermanGame();
++                try {
++                    game.start(mainStage);
++                } catch (IOException e) {
++                    throw new RuntimeException(e);
++                }
++            }
++        });
++    }
++
++    private void createScoreButtons(){
++        BombermanButton scoreButton = new BombermanButton("Scores");
++        addMenuButton(scoreButton);
++
++        scoreButton.setOnAction(new EventHandler<ActionEvent>() {
++            @Override
++            public void handle(ActionEvent event) {
++                showSubScene(scoreSubscene);
++            }
++        });
++    }
++
++    private void createHelpButton() {
++        BombermanButton helpButton = new BombermanButton("Help");
++        addMenuButton(helpButton);
++
++        helpButton.setOnAction(new EventHandler<ActionEvent>() {
++            @Override
++            public void handle(ActionEvent event) {
++                showSubScene(helpSubscene);
++            }
++        });
++    }
++
++//    private void createCreditsButton() {
++//        BombermanButton creditButton = new BombermanButton("Credits");
++//        addMenuButton(creditButton);
++//
++//        creditButton.setOnAction(new EventHandler<ActionEvent>() {
++//            @Override
++//            public void handle(ActionEvent event) {
++//                showSubScene(credistsSubscene);
++//            }
++//        });
++//    }
++
++    private void createExitButton() {
++        BombermanButton exitButton = new BombermanButton("Exit");
++        addMenuButton(exitButton);
++
++        exitButton.setOnAction(new EventHandler<ActionEvent>() {
++            @Override
++            public void handle(ActionEvent event) {
++                mainStage.close();
++            }
++        });
++    }
++    private void createBackground() {
++        Image backgroundImage = new Image("backgroundDesert.png", 768, 1024,false, true);
++        BackgroundImage background = new BackgroundImage(backgroundImage, BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT, BackgroundPosition.DEFAULT,null);
++        mainPane.setBackground(new Background(background));
++    }
++
++    private void createLogo() {
++        ImageView logo =  new ImageView("Logo1.png");
++        //logo.setFitHeight(200);
++        logo.setLayoutX(300);
++        logo.setLayoutY(50);
++        logo.setOnMouseEntered(new EventHandler<MouseEvent>() {
++            @Override
++            public void handle(MouseEvent event) {
++                logo.setEffect(new DropShadow());
++            }
++        });
++
++        logo.setOnMouseExited(new EventHandler<MouseEvent>() {
++            @Override
++            public void handle(MouseEvent event) {
++                logo.setEffect(null);
++            }
++        });
++        mainPane.getChildren().add(logo);
++    }
++
++
++}
+Index: src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java b/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java
+new file mode 100644
+--- /dev/null	(date 1665817344911)
++++ b/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java	(date 1665817344911)
+@@ -0,0 +1,46 @@
++package uet.oop.bomberman.Menu;
++
++import javafx.animation.TranslateTransition;
++import javafx.scene.SubScene;
++import javafx.scene.image.Image;
++import javafx.scene.layout.*;
++import javafx.util.Duration;
++
++public class BombermanSubscene extends SubScene {
++    private final static String FONT_PATH = "src/main/resources/kenvector_future.ttf";
++    private final static String BACKGROUND_IMAGE = "yellow_panel.png";
++    public static boolean isHidden = true;
++    public BombermanSubscene() {
++        super(new AnchorPane(), 600, 400);
++        prefWidth(600);
++        prefHeight(400);
++
++        BackgroundImage image = new BackgroundImage(new Image(BACKGROUND_IMAGE,600,400,false,true),
++                BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,null);
++
++        AnchorPane root2 = (AnchorPane) this.getRoot();
++
++        root2.setBackground(new Background(image));
++        //isHidden = true;
++        setLayoutX(1024);
++        setLayoutY(180);
++    }
++
++    public void moveSubScene() {
++        TranslateTransition transition = new TranslateTransition();
++        transition.setDuration(Duration.seconds(0.3));
++        transition.setNode(this);
++        if(isHidden) {
++            transition.setToX(-676);
++            isHidden = false;
++        } else {
++            transition.setToX(0);
++            isHidden = true;
++        }
++        transition.play();
++    }
++
++    public AnchorPane getPane() {
++        return (AnchorPane) this.getRoot();
++    }
++}
+Index: src/main/java/uet/oop/bomberman/Menu/BombermanButton.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java b/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java
+new file mode 100644
+--- /dev/null	(date 1665938697939)
++++ b/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java	(date 1665938697939)
+@@ -0,0 +1,91 @@
++package uet.oop.bomberman.Menu;
++
++import javafx.event.EventHandler;
++import javafx.scene.control.Button;
++import javafx.scene.effect.DropShadow;
++import javafx.scene.input.MouseButton;
++import javafx.scene.input.MouseEvent;
++import javafx.scene.text.Font;
++
++import java.io.FileInputStream;
++import java.io.FileNotFoundException;
++
++public class BombermanButton extends Button {
++    private final String FONT_PATH = "src/main/resources/kenvector_future.ttf";
++    private final String BUTTON_PRESSED_STYLE = "-fx-background-color: transparent; -fx-background-image : url('yellow_button03.png');";
++    private final String BUTTON_FREE_STYLE = "-fx-background-color: transparent; -fx-background-image : url('yellow_button04.png');";
++
++    public BombermanButton() {
++        //setStyle(BUTTON_FREE_STYLE);
++    }
++    public void set_Style(String url) {
++        this.setStyle(url);
++    }
++    public BombermanButton(String text) {
++        setText(text);
++        setButtonFont();
++        setPrefHeight(45);
++        setPrefWidth(190);
++        setStyle(BUTTON_FREE_STYLE);
++        initializeButtonListeners();
++    }
++
++    private void setButtonFont(){
++        try {
++            setFont(Font.loadFont(new FileInputStream(FONT_PATH), 23));
++        } catch (FileNotFoundException e) {
++            setFont(Font.font("Verdana", 23));
++        }
++    }
++
++    private void setButtonPressedStyle() {
++        setStyle(BUTTON_PRESSED_STYLE);
++        setPrefHeight(45);
++        setLayoutY(getLayoutY() + 4);
++    }
++
++    private void setButtonReleasedStyle() {
++        setStyle(BUTTON_FREE_STYLE);
++        setPrefHeight(49);
++        setLayoutY(getLayoutY() - 4);
++    }
++
++    private void initializeButtonListeners() {
++        setOnMousePressed(new EventHandler<MouseEvent>() {
++            @Override
++            public void handle(MouseEvent mouseEvent) {
++                if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
++                    setButtonPressedStyle();
++                }
++            }
++        });
++
++        setOnMouseReleased(new EventHandler<MouseEvent>() {
++            @Override
++            public void handle(MouseEvent mouseEvent) {
++                if(mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
++                    setButtonReleasedStyle();
++                }
++            }
++        });
++
++        setOnMouseEntered(new EventHandler<MouseEvent>() {
++            @Override
++            public void handle(MouseEvent mouseEvent) {
++                setEffect(new DropShadow());
++            }
++        });
++
++        setOnMouseExited(new EventHandler<MouseEvent>() {
++            @Override
++            public void handle(MouseEvent mouseEvent) {
++                setEffect(null);
++            }
++        });
++    }
++
++    public void setXY_Button(double x, double y) {
++        this.setLayoutX(x);
++        this.setLayoutY(y);
++    }
++}
+Index: src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package uet.oop.bomberman.entities;\r\n\r\nimport javafx.scene.image.Image;\r\n\r\nimport uet.oop.bomberman.graphics.Sprite;\r\n\r\nimport java.awt.*;\r\n\r\n\r\npublic abstract class AnimatedEntity extends Entity {\r\n    protected int animate = 0;\r\n    protected final int MAX_ANIMATE = 7500; //save the animation status and dont let this get too big\r\n    protected int desX = x;\r\n    protected int desY = y;\r\n    protected int speed;\r\n    protected int left = 0;\r\n    protected int right = 0;\r\n    protected int up = 0;\r\n    protected int down = 0;\r\n\r\n    public AnimatedEntity(int xUnit, int yUnit, Image img) {\r\n        super(xUnit, yUnit, img);\r\n        alive = true;\r\n    }\r\n\r\n    public void setSpeed(int speed) {\r\n        this.speed = speed;\r\n    }\r\n\r\n    public void goLeft() {\r\n        desX = x - speed;\r\n    }\r\n\r\n    public void goRight() {\r\n        desX = x + speed;\r\n    }\r\n    public void goUp() {\r\n        desY = y - speed;\r\n    }\r\n\r\n    public void goDown() {\r\n        desY = y + speed;\r\n    }\r\n\r\n    public void move() {\r\n        x = desX;\r\n        y = desY;\r\n    }\r\n\r\n    public void stay() {\r\n        desX = x;\r\n        desY = y;\r\n    }\r\n\r\n    public Rectangle getBounds() {\r\n        return new Rectangle(desX, desY, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);\r\n    }\r\n\r\n    protected void animate() {\r\n        if(animate < MAX_ANIMATE) {\r\n            animate++;\r\n        } else {\r\n            animate = 0; //reset animation\r\n        }\r\n    }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java b/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java
+--- a/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java	(revision d1e7121f9e3047b3812de16431217e21c134fbab)
++++ b/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java	(date 1665800073706)
+@@ -53,7 +53,7 @@
+     }
+ 
+     public Rectangle getBounds() {
+-        return new Rectangle(desX, desY, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
++        return new Rectangle(desX, desY , Sprite.SCALED_SIZE -1 , Sprite.SCALED_SIZE -1 );
+     }
+ 
+     protected void animate() {
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"6e91c6b6-2304-4154-a53a-2c2137c5e94c\" name=\"Changes\" comment=\"'update'\">\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Layer.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/audio/MyAudioPlayer.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/CollisionTypeCheck.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/AI/AStar.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/AI/BFS.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/AI/Point.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Kondoria.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Minvo.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/Controller.java\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/audio/dead.wav\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/audio/dead2.wav\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/audio/explosion.wav\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/audio/place_bomb.wav\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/audio/power_up.wav\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/levels/Level2.txt\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/levels/Level3.txt\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/levels/Level4.txt\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/sprites/nen.png\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/src/main/resources/sprites/start.jpg\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/shelved.patch\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Board.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Game.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/LayeredEntity.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Message.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Bomb.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Bomb.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Flame.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Flame.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/FlameSegment.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Bomber.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Bomber.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Character.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Balloon.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Balloon.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Doll.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Doll.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Enemy.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Enemy.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Oneal.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Oneal.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Grass.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Grass.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Portal.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Portal.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Tile.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Tile.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Wall.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Wall.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/destroyable/Brick.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Brick.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/destroyable/DestroyableTile.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/BombItem.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/BombItem.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/FlameItem.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/FlameItem.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/Item.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/Item.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/SpeedItem.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/SpeedItem.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/exceptions/GameException.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/exceptions/LoadLevelException.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/IRender.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/Screen.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/input/Keyboard.java\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/input/Keyboard.java\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/level/Coordinates.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/level/FileLevelLoader.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/level/LevelLoader.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/java/uet/oop/bomberman/sound/Sound.java\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/levels/Level1.txt\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/resources/levels/Level1.txt\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/AA126_11.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/BOM_11_M.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/BOM_SET.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/BOSS_X_11K.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/CRYST_UP.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/Item.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/endgame3.wav\" beforeDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/sound/soundtrack.wav\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/resources/audio/background_music.wav\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/src/main/resources/uet/oop/bomberman/bomberman.fxml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/main/resources/sample.fxml\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"FxmlFile\" />\r\n        <option value=\"Interface\" />\r\n        <option value=\"Class\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GithubPullRequestsUISettings\">\r\n    <option name=\"selectedUrlAndAccountId\">\r\n      <UrlAndAccount>\r\n        <option name=\"accountId\" value=\"adf6a17e-b52b-40b0-9aee-c57e09c6d4a1\" />\r\n        <option name=\"url\" value=\"https://github.com/long0508yt/bomberman.git\" />\r\n      </UrlAndAccount>\r\n    </option>\r\n  </component>\r\n  <component name=\"MarkdownSettingsMigration\">\r\n    <option name=\"stateVersion\" value=\"1\" />\r\n  </component>\r\n  <component name=\"MavenImportPreferences\">\r\n    <option name=\"generalSettings\">\r\n      <MavenGeneralSettings>\r\n        <option name=\"mavenHome\" value=\"Use Maven wrapper\" />\r\n        <option name=\"useMavenConfig\" value=\"true\" />\r\n      </MavenGeneralSettings>\r\n    </option>\r\n  </component>\r\n  <component name=\"ProblemsViewState\">\r\n    <option name=\"selectedTabId\" value=\"CurrentFile\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"2FDOYgdNqhPY8xcqdNRzm6UQAAo\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\">\r\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\r\n  </component>\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">{\r\n  &quot;keyToString&quot;: {\r\n    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,\r\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\r\n    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,\r\n    &quot;last_opened_file_path&quot;: &quot;/Users/long/IdeaProjects/bomberman&quot;,\r\n    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,\r\n    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,\r\n    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,\r\n    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,\r\n    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;\r\n  }\r\n}</component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"MoveFile.RECENT_KEYS\">\r\n      <recent name=\"$PROJECT_DIR$/src/main/resources/audio\" />\r\n      <recent name=\"$PROJECT_DIR$/src/main/resources/sprites\" />\r\n      <recent name=\"$PROJECT_DIR$/src/main/resources\" />\r\n      <recent name=\"$PROJECT_DIR$/src/main/resources/sound\" />\r\n      <recent name=\"$PROJECT_DIR$\" />\r\n    </key>\r\n    <key name=\"ExtractSuperBase.RECENT_KEYS\">\r\n      <recent name=\"uet.oop.bomberman.input\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Application.Main\">\r\n    <configuration name=\"BFS\" type=\"Application\" factoryName=\"Application\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <option name=\"MAIN_CLASS_NAME\" value=\"uet.oop.bomberman.entities.character.enemies.AI.BFS\" />\r\n      <module name=\"bomberman\" />\r\n      <extension name=\"coverage\">\r\n        <pattern>\r\n          <option name=\"PATTERN\" value=\"uet.oop.bomberman.entities.character.enemies.AI.*\" />\r\n          <option name=\"ENABLED\" value=\"true\" />\r\n        </pattern>\r\n      </extension>\r\n      <method v=\"2\">\r\n        <option name=\"Make\" enabled=\"true\" />\r\n      </method>\r\n    </configuration>\r\n    <configuration name=\"BombermanGame\" type=\"Application\" factoryName=\"Application\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <option name=\"MAIN_CLASS_NAME\" value=\"uet.oop.bomberman.BombermanGame\" />\r\n      <module name=\"bomberman\" />\r\n      <extension name=\"coverage\">\r\n        <pattern>\r\n          <option name=\"PATTERN\" value=\"uet.oop.bomberman.*\" />\r\n          <option name=\"ENABLED\" value=\"true\" />\r\n        </pattern>\r\n      </extension>\r\n      <method v=\"2\">\r\n        <option name=\"Make\" enabled=\"true\" />\r\n      </method>\r\n    </configuration>\r\n    <configuration name=\"Main\" type=\"Application\" factoryName=\"Application\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <option name=\"MAIN_CLASS_NAME\" value=\"uet.oop.bomberman.Main\" />\r\n      <module name=\"bomberman\" />\r\n      <extension name=\"coverage\">\r\n        <pattern>\r\n          <option name=\"PATTERN\" value=\"uet.oop.bomberman.*\" />\r\n          <option name=\"ENABLED\" value=\"true\" />\r\n        </pattern>\r\n      </extension>\r\n      <method v=\"2\">\r\n        <option name=\"Make\" enabled=\"true\" />\r\n      </method>\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Application.Main\" />\r\n        <item itemvalue=\"Application.BFS\" />\r\n        <item itemvalue=\"Application.BombermanGame\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"6e91c6b6-2304-4154-a53a-2c2137c5e94c\" name=\"Changes\" comment=\"\" />\r\n      <created>1664023236964</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1664023236964</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"'Fix bug start method'\">\r\n      <created>1664172767224</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664172767224</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00002\" summary=\"'Fix bug start method'\">\r\n      <created>1664173485598</created>\r\n      <option name=\"number\" value=\"00002\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00002\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664173485598</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00003\" summary=\"'Add class Keyboard.java to handle input events'\">\r\n      <created>1664203341181</created>\r\n      <option name=\"number\" value=\"00003\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00003\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664203341181</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00004\" summary=\"'Handle exeption package'\">\r\n      <created>1664204605745</created>\r\n      <option name=\"number\" value=\"00004\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00004\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664204605745</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00005\" summary=\"'Handle exeption package'\">\r\n      <created>1664204820470</created>\r\n      <option name=\"number\" value=\"00005\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00005\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664204820470</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00006\" summary=\"'Handle exeption package'\">\r\n      <created>1664204861403</created>\r\n      <option name=\"number\" value=\"00006\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00006\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664204861403</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00007\" summary=\"'Big update object, method in game'\">\r\n      <created>1664329036496</created>\r\n      <option name=\"number\" value=\"00007\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00007\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664329036496</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00008\" summary=\"'update'\">\r\n      <created>1664780741547</created>\r\n      <option name=\"number\" value=\"00008\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00008\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1664780741547</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"9\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State>\r\n              <option name=\"FILTERS\">\r\n                <map>\r\n                  <entry key=\"branch\">\r\n                    <value>\r\n                      <list>\r\n                        <option value=\"Long\" />\r\n                      </list>\r\n                    </value>\r\n                  </entry>\r\n                </map>\r\n              </option>\r\n            </State>\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"'Fix bug start method'\" />\r\n    <MESSAGE value=\"'Add class Keyboard.java to handle input events'\" />\r\n    <MESSAGE value=\"'Handle exeption package'\" />\r\n    <MESSAGE value=\"'Big update object, method in game'\" />\r\n    <MESSAGE value=\"'update'\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"'update'\" />\r\n  </component>\r\n  <component name=\"XSLT-Support.FileAssociations.UIState\">\r\n    <expand />\r\n    <select />\r\n  </component>\r\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\r\n    <SUITE FILE_PATH=\"coverage/bomberman$BombermanGame.ic\" NAME=\"BombermanGame Coverage Results\" MODIFIED=\"1664165211628\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"idea\" COVERAGE_BY_TEST_ENABLED=\"false\" COVERAGE_TRACING_ENABLED=\"false\">\r\n      <FILTER>uet.oop.bomberman.*</FILTER>\r\n    </SUITE>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision d1e7121f9e3047b3812de16431217e21c134fbab)
++++ b/.idea/workspace.xml	(date 1665938313278)
+@@ -5,75 +5,15 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="6e91c6b6-2304-4154-a53a-2c2137c5e94c" name="Changes" comment="'update'">
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Layer.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/audio/MyAudioPlayer.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/CollisionTypeCheck.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/AI/AStar.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/AI/BFS.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/AI/Point.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Kondoria.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Minvo.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/Controller.java" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/audio/dead.wav" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/audio/dead2.wav" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/audio/explosion.wav" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/audio/place_bomb.wav" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/audio/power_up.wav" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/levels/Level2.txt" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/levels/Level3.txt" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/levels/Level4.txt" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/sprites/nen.png" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/src/main/resources/sprites/start.jpg" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/shelved.patch" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml" beforeDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/ViewManager.java" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Board.java" beforeDir="false" />
+       <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Game.java" beforeDir="false" />
+       <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/LayeredEntity.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Message.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Bomb.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Bomb.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Flame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Flame.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/FlameSegment.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Bomber.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Bomber.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Character.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Balloon.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Balloon.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Doll.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Doll.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Enemy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Enemy.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemy/Oneal.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Oneal.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Grass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Grass.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Portal.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Portal.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Tile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Tile.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/Wall.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Wall.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/destroyable/Brick.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/fixed/Brick.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/destroyable/DestroyableTile.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/BombItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/BombItem.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/FlameItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/FlameItem.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/Item.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/Item.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/tile/item/SpeedItem.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/item/SpeedItem.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/exceptions/GameException.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/exceptions/LoadLevelException.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/IRender.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/Screen.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/input/Keyboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/input/Keyboard.java" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/level/Coordinates.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/level/FileLevelLoader.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/level/LevelLoader.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/sound/Sound.java" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/levels/Level1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/levels/Level1.txt" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/AA126_11.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/BOM_11_M.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/BOM_SET.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/BOSS_X_11K.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/CRYST_UP.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/Item.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/endgame3.wav" beforeDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/sound/soundtrack.wav" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/audio/background_music.wav" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/main/resources/uet/oop/bomberman/bomberman.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/sample.fxml" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -136,6 +76,9 @@
+   }
+ }</component>
+   <component name="RecentsManager">
++    <key name="CreateClassDialog.RecentsKey">
++      <recent name="uet.oop.bomberman.Menu" />
++    </key>
+     <key name="MoveFile.RECENT_KEYS">
+       <recent name="$PROJECT_DIR$/src/main/resources/audio" />
+       <recent name="$PROJECT_DIR$/src/main/resources/sprites" />
+@@ -183,6 +126,17 @@
+           <option name="ENABLED" value="true" />
+         </pattern>
+       </extension>
++      <method v="2">
++        <option name="Make" enabled="true" />
++      </method>
++    </configuration>
++    <configuration default="true" type="JetRunConfigurationType">
++      <method v="2">
++        <option name="Make" enabled="true" />
++      </method>
++    </configuration>
++    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
++      <option name="filePath" />
+       <method v="2">
+         <option name="Make" enabled="true" />
+       </method>
+Index: src/main/java/uet/oop/bomberman/Menu/InfoLabel.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java b/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java
+new file mode 100644
+--- /dev/null	(date 1665938312240)
++++ b/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java	(date 1665938312240)
+@@ -0,0 +1,47 @@
++package uet.oop.bomberman.Menu;
++
++import javafx.geometry.Insets;
++import javafx.geometry.Pos;
++import javafx.scene.control.Label;
++import javafx.scene.image.Image;
++import javafx.scene.layout.Background;
++import javafx.scene.layout.BackgroundImage;
++import javafx.scene.layout.BackgroundPosition;
++import javafx.scene.layout.BackgroundRepeat;
++import javafx.scene.text.Font;
++
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileNotFoundException;
++
++public class InfoLabel extends Label {
++    public final static String FONT_PATH = "src/main/resources/kenvector_future.ttf";
++
++    public final static String BACKGROUND_IMAGE = "yellow_button13.png";
++
++    public InfoLabel(String text) {
++        setPrefWidth(340);
++        setPrefHeight(40);
++        //setPadding(new Insets(40,40,40,40));
++        setText(text);
++        setWrapText(true);
++        setLabelFont();
++        setAlignment(Pos.CENTER_LEFT);
++        BackgroundImage backgroundImage = new BackgroundImage(new Image(BACKGROUND_IMAGE, 380, 49, false, true)
++                , BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, null);
++        setBackground(new Background(backgroundImage));
++    }
++
++    public void setXY(int x, int y) {
++        this.setLayoutX(x);
++        this.setLayoutY(y);
++    }
++    private void setLabelFont() {
++        try {
++            setFont(Font.loadFont(new FileInputStream(new File(FONT_PATH)),20));
++        } catch (FileNotFoundException e) {
++            setFont(Font.font("Verdana",20));
++        }
++    }
++}
++
+Index: src/main/java/uet/oop/bomberman/Main.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package uet.oop.bomberman;\r\n\r\n//import uet.oop.bomberman.gui.Frame;\r\n\r\npublic class Main {\r\n    public static void main(String[] args) {\r\n\r\n//        new Frame();\r\n        BombermanGame.main(args);\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/Main.java b/src/main/java/uet/oop/bomberman/Main.java
+--- a/src/main/java/uet/oop/bomberman/Main.java	(revision d1e7121f9e3047b3812de16431217e21c134fbab)
++++ b/src/main/java/uet/oop/bomberman/Main.java	(date 1665817469129)
+@@ -2,10 +2,23 @@
+ 
+ //import uet.oop.bomberman.gui.Frame;
+ 
+-public class Main {
+-    public static void main(String[] args) {
++import javafx.application.Application;
++import javafx.fxml.FXMLLoader;
++import javafx.scene.Scene;
++import javafx.stage.Stage;
++import uet.oop.bomberman.Menu.ViewManager;
+ 
+-//        new Frame();
+-        BombermanGame.main(args);
++import java.io.IOException;
++
++public class Main extends Application {
++    @Override
++    public void start(Stage stage) throws IOException {
++//        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
++//        Scene scene = new Scene(fxmlLoader.load(), 320, 240);
++//        stage.setTitle("Hello!");
++//        stage.setScene(scene);
++        ViewManager manager = new ViewManager();
++        stage = manager.getMainStage();
++        stage.show();
+     }
+-}
++}
+\ No newline at end of file
+Index: src/main/java/uet/oop/bomberman/entities/Entity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package uet.oop.bomberman.entities;\r\n\r\nimport javafx.scene.canvas.GraphicsContext;\r\nimport javafx.scene.image.Image;\r\nimport uet.oop.bomberman.graphics.Sprite;\r\n\r\nimport java.awt.*;\r\n\r\n/**\r\n * Base class for all entities in the game\r\n */\r\npublic abstract class Entity {\r\n    //Tọa độ X tính từ góc trái trên trong Canvas\r\n    protected int x;\r\n\r\n    //Tọa độ Y tính từ góc trái trên trong Canvas\r\n    protected int y;\r\n\r\n    // ảnh của entity\r\n    protected Image img;\r\n    protected int animated = 0;\r\n    protected int layer;\r\n    protected boolean alive;\r\n\r\n    public Entity() {\r\n\r\n    }\r\n\r\n    // Khởi tạo đối tượng, chuyển từ tọa độ đơn vị sang tọa độ trong canvas\r\n    public Entity(int xUnit, int yUnit, Image img) {\r\n        x = xUnit * Sprite.SCALED_SIZE;\r\n        y = yUnit * Sprite.SCALED_SIZE;\r\n        this.img = img;\r\n    }\r\n\r\n    public Entity(int x, int y) {\r\n        this.x = x;\r\n        this.y = y;\r\n    }\r\n\r\n    public void render(GraphicsContext gc) {\r\n        gc.drawImage(img, x, y);\r\n    }\r\n\r\n    public abstract void update();\r\n\r\n    // getters & setters\r\n    public int getX() {\r\n        return x;\r\n    }\r\n\r\n    public int getY() {\r\n        return y;\r\n    }\r\n\r\n    public int getLayer() {\r\n        return layer;\r\n    }\r\n\r\n    public void setLayer(int layer) {\r\n        this.layer = layer;\r\n    }\r\n\r\n    public void setAlive(boolean alive) {\r\n        this.alive = alive;\r\n    }\r\n\r\n    public Rectangle getBounds() {\r\n        return new Rectangle(x, y, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);\r\n    }\r\n\r\n    public boolean isAlive() {\r\n        return alive;\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/uet/oop/bomberman/entities/Entity.java b/src/main/java/uet/oop/bomberman/entities/Entity.java
+--- a/src/main/java/uet/oop/bomberman/entities/Entity.java	(revision d1e7121f9e3047b3812de16431217e21c134fbab)
++++ b/src/main/java/uet/oop/bomberman/entities/Entity.java	(date 1665819885736)
+@@ -66,7 +66,7 @@
+     }
+ 
+     public Rectangle getBounds() {
+-        return new Rectangle(x, y, Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
++        return new Rectangle(x, y, Sprite.SCALED_SIZE - 2, Sprite.SCALED_SIZE -2);
+     }
+ 
+     public boolean isAlive() {
