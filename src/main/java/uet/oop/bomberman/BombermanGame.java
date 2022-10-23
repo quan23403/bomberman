@@ -2,13 +2,23 @@ package uet.oop.bomberman;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import org.w3c.dom.Text;
+import uet.oop.bomberman.Menu.BombermanButton;
+import uet.oop.bomberman.Menu.InfoLabel;
+import uet.oop.bomberman.Menu.PauseScene;
+import uet.oop.bomberman.Menu.ViewManager;
 import uet.oop.bomberman.audio.MyAudioPlayer;
 import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.entities.bomb.Bomb;
@@ -32,6 +42,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 
+import static uet.oop.bomberman.Menu.ViewManager.musicPlayer;
+
 public class BombermanGame extends Application {
 
     public static int WIDTH = 31;
@@ -43,7 +55,17 @@ public class BombermanGame extends Application {
     private boolean muted = false;
     private Canvas canvas;
 
+    private Runnable newGameDo;
     private List<String> input = new ArrayList<>();
+
+    private AnchorPane mainPane;
+    private PauseScene pauseScene;
+    private Stage mainStage = new Stage();
+
+    private String BUTTON_MENU_PRESS_STYLE = "-fx-background-color: transparent; -fx-background-image : url('grey_button3.png');";
+    private String BUTTON_MENU_FREE_STYLE = "-fx-background-color: transparent; -fx-background-image : url('grey_button4.png');";
+    private BombermanButton Resume;
+    private BombermanButton NewGame;
 
     private int xStart;
     private int yStart;
@@ -56,8 +78,8 @@ public class BombermanGame extends Application {
     public static Bomber myBomber;
     public static int[][] map = new int[HEIGHT][WIDTH];
     public static int[][] mapAStar = new int[HEIGHT][WIDTH];
-    public static MyAudioPlayer musicPlayer = new MyAudioPlayer(MyAudioPlayer.BACKGROUND_MUSIC);
-
+    //public static MyAudioPlayer musicPlayer = new MyAudioPlayer(MyAudioPlayer.BACKGROUND_MUSIC);
+    private Group root = new Group();
     public MyAudioPlayer getMusicPlayer() {
         return musicPlayer;
     }
@@ -74,28 +96,34 @@ public class BombermanGame extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
-        musicPlayer.play();
+        mainStage = stage;
+        mainPane = new AnchorPane();
+
+        //musicPlayer.();
 //        load();
         load(level);
         // Tao Canvas
+
+
         canvas = new Canvas(Sprite.SCALED_SIZE * WIDTH, Sprite.SCALED_SIZE * HEIGHT);
         gc = canvas.getGraphicsContext2D();
 
         // Tao root container
-        Group root = new Group();
-        root.getChildren().add(canvas);
-
+        //root = new Group();
+        mainPane.getChildren().add(canvas);
+        makePauseScene();
         // Tao scene
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(mainPane, 990, 416);
 
 
         // Them scene vao stage
         stage.setScene(scene);
         stage.setTitle("Bomberman Game");
 
-
 //        stage.getIcons().add(img);
-        stage.setResizable(false);
+        stage.setResizable(true);
+        stage.setX(300);
+        stage.setY(200);
         stage.show();
 
 
@@ -120,6 +148,7 @@ public class BombermanGame extends Application {
             myBomber.handleKeyPressedEvent(event.getCode());
             if (event.getCode() == KeyCode.K) {
                 paused = !paused;
+                pauseScene.moveSubScene();
             }
             if (event.getCode() == KeyCode.M) {
                 if (muted) {
@@ -133,6 +162,7 @@ public class BombermanGame extends Application {
     }
 
     public void update() {
+
         // không sửa thành for each trong game không sẽ bị lỗi
         for (int i = 0; i < enemies.size(); i++) {
             enemies.get(i).update();
@@ -175,7 +205,8 @@ public class BombermanGame extends Application {
         enemies.removeAll(enemies);
         stillObjects.removeAll(stillObjects);
         flameList.removeAll(flameList);
-
+//        if(myBomber != null)
+//            myBomber.getBombs().removeAll(myBomber.getBombs());
         // print all list
 //        for (String s : input) {
 //            System.out.println(s);
@@ -185,7 +216,6 @@ public class BombermanGame extends Application {
 
     public void createMap() {
         createMatrixCoordinates();
-
         for (int i = 0; i < HEIGHT; i++) {
 
             String r = input.get(i + 1);
@@ -418,6 +448,15 @@ public class BombermanGame extends Application {
         }
     }
 
+    public void makePauseScene() {
+        pauseScene = new PauseScene();
+        mainPane.getChildren().add(pauseScene);
+
+        InfoLabel pause = new InfoLabel("PAUSE", "grey_button03.png");
+
+        pauseScene.getPane().getChildren().add(pause);
+    }
+
     public void render() {
         gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
         for (int i = stillObjects.size() - 1; i >= 0; i--) {
@@ -431,4 +470,19 @@ public class BombermanGame extends Application {
         myBomber.render(gc);
         flameList.forEach(g -> g.render(gc));
     }
+
+//    public void cleanup() {}
+//    public void startGame(Stage stage) {
+//        // initialisation from start method goes here
+//        NewGame.setOnAction(e -> {
+//            //pauseScene.moveSubScene();
+//            restart(stage);
+//        });
+//        stage.show();
+//    }
+//
+//    public void restart(Stage stage){
+//        cleanup();
+//        startGame(stage);
+//    }
 }

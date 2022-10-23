@@ -6,25 +6,24 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
 
-public class BombermanSubscene extends SubScene {
+public class PauseScene extends SubScene {
     private final static String FONT_PATH = "src/main/resources/kenvector_future.ttf";
-    private final static String BACKGROUND_IMAGE = "yellow_panel.png";
+    private final static String BACKGROUND_IMAGE = "pausescreen1.png";
     public static boolean isHidden = true;
+    public PauseScene() {
+        super(new AnchorPane(), 400, 250);
+        prefWidth(400);
+        prefHeight(250);
 
-    public BombermanSubscene() {
-        super(new AnchorPane(), 600, 400);
-        prefWidth(600);
-        prefHeight(400);
-
-        BackgroundImage image = new BackgroundImage(new Image(BACKGROUND_IMAGE,600,400,false,true),
+        BackgroundImage image = new BackgroundImage(new Image(BACKGROUND_IMAGE,400,250,false,true),
                 BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,null);
 
         AnchorPane root2 = (AnchorPane) this.getRoot();
 
         root2.setBackground(new Background(image));
         //isHidden = true;
-        setLayoutX(1024);
-        setLayoutY(180);
+        setLayoutX(1400);
+        setLayoutY(80);
     }
 
     public void moveSubScene() {
@@ -32,7 +31,7 @@ public class BombermanSubscene extends SubScene {
         transition.setDuration(Duration.seconds(0.3));
         transition.setNode(this);
         if(isHidden) {
-            transition.setToX(-676);
+            transition.setToX(-1100);
             isHidden = false;
         } else {
             transition.setToX(0);

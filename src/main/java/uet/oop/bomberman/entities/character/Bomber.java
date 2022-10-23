@@ -34,6 +34,7 @@ public class Bomber extends AnimatedEntity {
         setRadius(1);
     }
 
+
     public void setRadius(int radius) {
         this.radius = radius;
     }
