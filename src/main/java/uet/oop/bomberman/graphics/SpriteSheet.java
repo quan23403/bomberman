@@ -20,6 +20,7 @@ public class SpriteSheet {
 //    public static SpriteSheet player = new SpriteSheet("/textures/player.png", 959);
 
     public SpriteSheet(String path, int size) {
+
         _path = path;
         SIZE = size;
         _pixels = new int[SIZE * SIZE];

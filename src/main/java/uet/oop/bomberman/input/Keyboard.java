@@ -9,20 +9,20 @@ import javafx.scene.input.KeyCode;
 public class Keyboard {
 
     private final boolean[] keys = new boolean[120]; // 120 is the max number of keys
-    public boolean up, down, left, right, space, enter, esc;
+    public boolean _up, _down, _left, _right, _space, enter, esc;
 
     // method to update the keys
     public void update() {
-        up = keys[KeyCode.UP.getCode()] || keys[KeyCode.W.getCode()];
-        down = keys[KeyCode.DOWN.getCode()] || keys[KeyCode.S.getCode()];
-        left = keys[KeyCode.LEFT.getCode()] || keys[KeyCode.A.getCode()];
-        right = keys[KeyCode.RIGHT.getCode()] || keys[KeyCode.D.getCode()];
-        space = keys[KeyCode.SPACE.getCode()];
+        _up = keys[KeyCode.UP.getCode()] || keys[KeyCode.W.getCode()];
+        _down = keys[KeyCode.DOWN.getCode()] || keys[KeyCode.S.getCode()];
+        _left = keys[KeyCode.LEFT.getCode()] || keys[KeyCode.A.getCode()];
+        _right = keys[KeyCode.RIGHT.getCode()] || keys[KeyCode.D.getCode()];
+        _space = keys[KeyCode.SPACE.getCode()];
     }
 
     public Keyboard() {
-        for (int i = 0; i < keys.length; i++) {
-            keys[i] = false;
+        for (int j = 0; j < keys.length; j++) {
+            keys[j] = false;
         }
     }
 }

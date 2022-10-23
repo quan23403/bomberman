@@ -5,15 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6e91c6b6-2304-4154-a53a-2c2137c5e94c" name="Changes" comment="'update'">
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/ViewManager.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/PauseScene.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/BombermanGame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/AnimatedEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/Entity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Layer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Layer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanButton.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/BombermanSubscene.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/InfoLabel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/ViewManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/Menu/ViewManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/audio/MyAudioPlayer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/audio/MyAudioPlayer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Flame.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/bomb/Flame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Bomber.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/Bomber.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/graphics/SpriteSheet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/input/Keyboard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/input/Keyboard.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,24 +66,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "last_opened_file_path": "/Users/long/IdeaProjects/bomberman",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/long/IdeaProjects/bomberman&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   },
-  "keyToStringList": {
-    "ChangesTree.GroupingKeys": [
-      "directory"
+  &quot;keyToStringList&quot;: {
+    &quot;ChangesTree.GroupingKeys&quot;: [
+      &quot;directory&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/main/resources/audio" />
@@ -205,7 +209,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664780741547</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="'update'">
+      <created>1665988900679</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1665988900680</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -219,7 +230,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="Long" />
+                        <option value="origin/Quân" />
                       </list>
                     </value>
                   </entry>

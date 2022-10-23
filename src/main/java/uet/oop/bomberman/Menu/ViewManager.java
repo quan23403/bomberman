@@ -13,11 +13,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import uet.oop.bomberman.BombermanGame;
+import uet.oop.bomberman.audio.MyAudioPlayer;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.Random;
 
 
 public class ViewManager {
@@ -32,10 +33,17 @@ public class ViewManager {
 
     //private BombermanSubscene credistsSubscene;
     private BombermanSubscene helpSubscene;
-    private BombermanSubscene scoreSubscene;
-    private BombermanSubscene shipChooserScene;
 
+    private BombermanSubscene settingSubscene;
+
+    //private BombermanSubscene shipChooserScene;
+    private ImageView nextSong;
+    private ImageView prevSong;
+    private ImageView playSong;
     private BombermanSubscene sceneToHide;
+    Random random = new Random();
+    public int numberSong = random.nextInt(50) % 5;
+    public static MyAudioPlayer musicPlayer = new MyAudioPlayer();
 
     List<BombermanButton> menuButtons;
     //List<ShipPicker>  shipsList;
@@ -47,12 +55,18 @@ public class ViewManager {
         mainScene = new Scene(mainPane,WIDTH,HEIGHT);
         mainStage = new Stage();
         mainStage.setScene(mainScene);
-        createSubScenes();
         createButtons();
+        createSubScenes();
         createBackground();
         createLogo();
+        PlayMusic();
     }
 
+    public void PlayMusic() {
+        musicPlayer.initList();
+        musicPlayer = new MyAudioPlayer(musicPlayer.BACKGROUND_MUSIC.get(numberSong));
+        musicPlayer.play();
+    }
     private void showSubScene(BombermanSubscene subScene) {
         if( sceneToHide == subScene) {
             sceneToHide.moveSubScene();
@@ -83,7 +97,7 @@ public class ViewManager {
     private void createButtons() {
         //createLogo();
         createStartButtons();
-        createScoreButtons();
+       //createSettingButtons();
         createBackground();
         //createCreditsButton();
         createHelpButton();
@@ -91,73 +105,17 @@ public class ViewManager {
     }
 
     private void createSubScenes() {
-//        credistsSubscene = new BombermanSubscene();
-//        mainPane.getChildren().add(credistsSubscene);
-
-        helpSubscene = new BombermanSubscene();
-        mainPane.getChildren().add(helpSubscene);
-
         createInstructionSubscene();
-
-        scoreSubscene = new BombermanSubscene();
-        mainPane.getChildren().add(scoreSubscene);
-
-//        shipChooserScene = new BombermanSubscene();
-//        mainPane.getChildren().add(shipChooserScene);
-
-        //createShipChooserSubScene();
+        //createSettingSubscene();
     }
-//    private  void createShipChooserSubScene() {
-//        shipChooserScene = new BombermanSubscene();
-//        mainPane.getChildren().add(shipChooserScene);
-//
-//        InfoLabel chooseShipLabel = new InfoLabel("CHOOSE YOUR SHIP");
-//        chooseShipLabel.setLayoutX(110);
-//        chooseShipLabel.setLayoutY(25);
-//        shipChooserScene.getPane().getChildren().add(chooseShipLabel);
-//        shipChooserScene.getPane().getChildren().add(createShipToChoose());
-//        shipChooserScene.getPane().getChildren().add(createButtonToStart());
-//    }
 
-//    private HBox createShipToChoose() {
-//        HBox box = new HBox();
-//        box.setSpacing(40);
-//        shipsList = new ArrayList<>();
-//        for(SHIP ship : SHIP.values()) {
-//            ShipPicker shipToPick = new ShipPicker(ship);
-//            shipsList.add(shipToPick);
-//            box.getChildren().add(shipToPick);
-//            shipToPick.setOnMouseClicked(new EventHandler<MouseEvent>() {
-//                @Override
-//                public void handle(MouseEvent event) {
-//                    for (ShipPicker ship : shipsList) {
-//                        ship.setIsCircleChoosen(false);
-//                    }
-//                    shipToPick.setIsCircleChoosen(true);
-//                    choosenShip = shipToPick.getShip();
-//                }
-//            });
-//        }
-//        box.setLayoutX(300 - (118*2) + 50);
-//        box.setLayoutY(100);
-//        return box;
-//    }
-
-    //    private BombermanButton createButtonToStart() {
-//        BombermanButton startButton = new BombermanButton("START");
-//        startButton.setLayoutX(350);
-//        startButton.setLayoutY(300);
+//    private void createSettingSubscene() {
+//        settingSubscene = new BombermanSubscene();
+//        mainPane.getChildren().add(settingSubscene);
 //
-//        startButton.setOnAction(new EventHandler<ActionEvent>() {
-//            @Override
-//            public void handle(ActionEvent event) {
-//                if(choosenShip != null) {
-//                    GameViewManager gameManager = new GameViewManager();
-//                    gameManager.createNewGame(mainStage, choosenShip);
-//                }
-//            }
-//        });
-//        return startButton;
+//        nextSong = new ImageView("right.png");
+//
+//
 //    }
     private void createInstructionSubscene() {
         helpSubscene = new BombermanSubscene();
@@ -233,14 +191,14 @@ public class ViewManager {
         });
     }
 
-    private void createScoreButtons(){
-        BombermanButton scoreButton = new BombermanButton("Scores");
-        addMenuButton(scoreButton);
+    private void createSettingButtons(){
+        BombermanButton settingButton = new BombermanButton("Setting");
+        addMenuButton(settingButton);
 
-        scoreButton.setOnAction(new EventHandler<ActionEvent>() {
+        settingButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                showSubScene(scoreSubscene);
+                showSubScene(settingSubscene);
             }
         });
     }
@@ -257,17 +215,6 @@ public class ViewManager {
         });
     }
 
-//    private void createCreditsButton() {
-//        BombermanButton creditButton = new BombermanButton("Credits");
-//        addMenuButton(creditButton);
-//
-//        creditButton.setOnAction(new EventHandler<ActionEvent>() {
-//            @Override
-//            public void handle(ActionEvent event) {
-//                showSubScene(credistsSubscene);
-//            }
-//        });
-//    }
 
     private void createExitButton() {
         BombermanButton exitButton = new BombermanButton("Exit");
@@ -306,6 +253,5 @@ public class ViewManager {
         });
         mainPane.getChildren().add(logo);
     }
-
 
 }
