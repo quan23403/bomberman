@@ -20,33 +20,37 @@ public class Flame extends Entity implements CollisionTypeCheck {
     private int direction;
     private int time = 0;
 
+
     /**
      * Constructor.
      */
-    public Flame(int x, int y, Image image, int direction) {
-        super(x, y);
-        this.img = image;
+    public Flame(int _x, int _y, Image _image, int _direction) {
+
+        super(_x, _y);
+        this.img = _image;
         this.direction = direction;
     }
 
-    public Flame(int x, int y, Image image) {
-        super(x, y);
-        this.img = image;
+    public Flame(int _x, int _y, Image _image) {
+        super(_x, _y);
+        this.img = _image;
         this.radius = 2;
+
     }
 
-    public Flame(int x, int y) {
-        super(x, y);
+    public Flame(int _x, int _y) {
+        super(_x, _y);
     }
 
     public void setRadius(int radius) {
+
         this.radius = radius;
     }
 
 
     @Override
     public void update() {
-        if (time < 20) {
+        if (time <= 19) {
             time++;
             setImg();
         } else
@@ -54,6 +58,7 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     public void render_explosion() {
+
         Right();
         Left();
         Top();
@@ -63,7 +68,6 @@ public class Flame extends Entity implements CollisionTypeCheck {
 
     private void create_explosion() {
         BombermanGame.flameList.add(new Flame(x, y, Sprite.bomb_exploded.getFxImage(), 0));
-        //BombermanGame.explosionList.add(new explosion(x, y, Sprite.bo.getFxImage(),4));
         for (int i = 0; i < right; i++) {
             Flame e = new Flame(x + size * (i + 1), y);
             if (i == right - 1) {
@@ -114,6 +118,7 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     private void Right() {
+        // move right.
         for (int i = 0; i < radius; i++) {
             Rectangle ex_right = new Rectangle(x + size * (i + 1), y, size, size);
             if (collisionType(ex_right) instanceof Wall) {
@@ -128,6 +133,7 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     private void Left() {
+        // move left
         for (int i = 0; i < radius; i++) {
             Rectangle ex_left = new Rectangle(x - size * (i + 1), y, size, size);
             if (collisionType(ex_left) instanceof Wall) {
@@ -142,6 +148,7 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     private void Top() {
+        // move top
         for (int i = 0; i < radius; i++) {
             Rectangle ex_top = new Rectangle(x, y - size * (i + 1), size, size);
             if (collisionType(ex_top) instanceof Wall) {
@@ -156,6 +163,7 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     private void Down() {
+        // move down
         for (int i = 0; i < radius; i++) {
             Rectangle ex_down = new Rectangle(x, y + size * (i + 1), size, size);
             if (collisionType(ex_down) instanceof Wall) {
@@ -170,6 +178,7 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     private static boolean isCollisionsWall(Rectangle r) {
+        // Box
         for (Entity e : BombermanGame.stillObjects) {
             Rectangle r2 = e.getBounds();
             if (r.intersects(r2)) {
@@ -181,17 +190,18 @@ public class Flame extends Entity implements CollisionTypeCheck {
     }
 
     @Override
-    public Object collisionType(Rectangle r) {
+    public Object collisionType(Rectangle _r) {
         for (Entity e : BombermanGame.stillObjects) {
             Rectangle r2 = e.getBounds();
-            if (r.intersects(r2)) {
+            if (_r.intersects(r2)) {
                 return e;
             }
         }
-        return r;
+        return _r;
     }
 
     private void setImg() {
+        // Hinh anh dong khi di chuyen .
         switch (direction) {
             case 0:
                 img = Sprite.movingSprite(Sprite.bomb_exploded, Sprite.bomb_exploded1,

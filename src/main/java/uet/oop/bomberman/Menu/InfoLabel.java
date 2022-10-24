@@ -15,11 +15,26 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 public class InfoLabel extends Label {
-    public final static String FONT_PATH = "src/main/resources/kenvector_future.ttf";
+    public static String FONT_PATH = "src/main/resources/kenvector_future.ttf";
 
-    public final static String BACKGROUND_IMAGE = "yellow_button13.png";
+    public static String BACKGROUND_IMAGE = "yellow_button13.png";
+    private int Font_Size = 20 ;
+    public InfoLabel(String text, String background) {
+        Font_Size = 30;
+        setPrefWidth(340);
+        setPrefHeight(40);
+        setPadding(new Insets(100,40,40,100));
+        setText(text);
+        setWrapText(true);
+        setLabelFont();
+        setAlignment(Pos.CENTER);
+//        BackgroundImage backgroundImage = new BackgroundImage(new Image(background, 100, 49, false, true)
+//                , BackgroundRepeat.NO_REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT, null);
+//        setBackground(new Background(backgroundImage));
+    }
 
     public InfoLabel(String text) {
+        Font_Size = 20;
         setPrefWidth(340);
         setPrefHeight(40);
         //setPadding(new Insets(40,40,40,40));
@@ -38,10 +53,12 @@ public class InfoLabel extends Label {
     }
     private void setLabelFont() {
         try {
-            setFont(Font.loadFont(new FileInputStream(new File(FONT_PATH)),20));
+            setFont(Font.loadFont(new FileInputStream(new File(FONT_PATH)),Font_Size));
         } catch (FileNotFoundException e) {
             setFont(Font.font("Verdana",20));
         }
     }
+
+
 }
 
