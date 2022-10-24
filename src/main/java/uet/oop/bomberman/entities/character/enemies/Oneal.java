@@ -6,6 +6,7 @@ import uet.oop.bomberman.entities.character.Bomber;
 import uet.oop.bomberman.graphics.Sprite;
 
 import java.awt.*;
+import java.util.Random;
 
 public class Oneal extends Enemy {
     private int direction;
@@ -57,7 +58,8 @@ public class Oneal extends Enemy {
         }
 
         if(isAlive()){
-
+            Random random = new Random();
+            setSpeed(1 + random.nextInt(3));
         } else if(animated < 30) {
             super.stay();
             animated++;
