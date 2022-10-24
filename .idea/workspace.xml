@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6e91c6b6-2304-4154-a53a-2c2137c5e94c" name="Changes" comment="'i dont know what i do'">
-      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Kondoria.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Kondoria.java" afterDir="false" />
+    <list default="true" id="6e91c6b6-2304-4154-a53a-2c2137c5e94c" name="Changes" comment="'menu update'">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Oneal.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uet/oop/bomberman/entities/character/enemies/Oneal.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/levels/Level1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/levels/Level1.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
