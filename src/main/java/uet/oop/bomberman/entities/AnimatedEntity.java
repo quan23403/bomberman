@@ -13,11 +13,7 @@ public abstract class AnimatedEntity extends Entity {
     protected int desX = x;
     protected int desY = y;
     protected int speed;
-    protected int left = 0;
-    protected int right = 0;
-    protected int up = 0;
-    protected int down = 0;
-
+    protected int img_No = 0;
     public AnimatedEntity(int xUnit, int yUnit, Image img) {
         super(xUnit, yUnit, img);
         alive = true;
@@ -29,17 +25,21 @@ public abstract class AnimatedEntity extends Entity {
 
     public void goLeft() {
         desX = x - speed;
+        desX = (int)roundNumber(desX * 10.0 ) / 10;
     }
 
     public void goRight() {
         desX = x + speed;
+        desX = (int)roundNumber(desX * 10.0 ) / 10;
     }
     public void goUp() {
         desY = y - speed;
+        desY = (int)roundNumber(desY * 10.0 ) / 10;
     }
 
     public void goDown() {
         desY = y + speed;
+        desY = (int)roundNumber(desY * 10.0 ) / 10;
     }
 
     public void move() {
@@ -64,4 +64,11 @@ public abstract class AnimatedEntity extends Entity {
         }
     }
 
+    double roundNumber(double a) {
+        double num = (int) (a);
+        if (num + 0.5 <= a) {
+            num += 1;
+        }
+        return num;
+    }
 }

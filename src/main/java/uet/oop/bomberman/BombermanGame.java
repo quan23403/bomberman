@@ -2,45 +2,36 @@ package uet.oop.bomberman;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import org.w3c.dom.Text;
-import uet.oop.bomberman.Menu.BombermanButton;
 import uet.oop.bomberman.Menu.InfoLabel;
 import uet.oop.bomberman.Menu.PauseScene;
-import uet.oop.bomberman.Menu.ViewManager;
 import uet.oop.bomberman.audio.MyAudioPlayer;
 import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.entities.bomb.Bomb;
 import uet.oop.bomberman.entities.bomb.Flame;
 import uet.oop.bomberman.entities.character.Bomber;
 import uet.oop.bomberman.entities.character.enemies.*;
+import uet.oop.bomberman.entities.fixed.Brick;
 import uet.oop.bomberman.entities.fixed.Grass;
 import uet.oop.bomberman.entities.fixed.Portal;
 import uet.oop.bomberman.entities.fixed.Wall;
-import uet.oop.bomberman.entities.fixed.Brick;
 import uet.oop.bomberman.entities.item.BombItem;
 import uet.oop.bomberman.entities.item.FlameItem;
 import uet.oop.bomberman.entities.item.Item;
 import uet.oop.bomberman.entities.item.SpeedItem;
 import uet.oop.bomberman.graphics.Sprite;
 
-import java.io.BufferedReader;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 import static uet.oop.bomberman.Menu.ViewManager.musicPlayer;
 
@@ -55,34 +46,37 @@ public class BombermanGame extends Application {
     private boolean muted = false;
     private Canvas canvas;
 
-    private Runnable newGameDo;
-    private List<String> input = new ArrayList<>();
+    //private Runnable newGameDo;
+    private final List<String> inputMap = new ArrayList<>();
 
     private AnchorPane mainPane;
     private PauseScene pauseScene;
     private Stage mainStage = new Stage();
 
-    private String BUTTON_MENU_PRESS_STYLE = "-fx-background-color: transparent; -fx-background-image : url('grey_button3.png');";
-    private String BUTTON_MENU_FREE_STYLE = "-fx-background-color: transparent; -fx-background-image : url('grey_button4.png');";
-    private BombermanButton Resume;
+/*
+    private final String BUTTON_MENU_PRESS_STYLE = "-fx-background-color: transparent; -fx-background-image : url('grey_button3.png');";
+    private final String BUTTON_MENU_FREE_STYLE = "-fx-background-color: transparent; -fx-background-image : url('grey_button4.png');";//   private BombermanButton Resume;
     private BombermanButton NewGame;
+*/
 
     private int xStart;
     private int yStart;
     public static final List<Enemy> enemies = new ArrayList<>();
-    public static List<Entity> stillObjects = new ArrayList<>();
+    public static final List<Entity> stillObjects = new ArrayList<>();
     public static final List<Flame> flameList = new ArrayList<>();
     public int startBomb = 1;
     public int startSpeed = 2;
     public int startFlame = 1;
     public static Bomber myBomber;
+
     public static int[][] map = new int[HEIGHT][WIDTH];
     public static int[][] mapAStar = new int[HEIGHT][WIDTH];
-    //public static MyAudioPlayer musicPlayer = new MyAudioPlayer(MyAudioPlayer.BACKGROUND_MUSIC);
-    private Group root = new Group();
-    public MyAudioPlayer getMusicPlayer() {
-        return musicPlayer;
-    }
+    public static int[][] isSolid = new int[HEIGHT + 1][WIDTH + 1];
+//    public static MyAudioPlayer musicPlayer = new MyAudioPlayer(MyAudioPlayer.BACKGROUND_MUSIC);
+//    private Group root = new Group();
+//    public MyAudioPlayer getMusicPlayer() {
+//        return musicPlayer;
+//    }
 
     public void setMusicPlayer(MyAudioPlayer _musicPlayer) {
         musicPlayer = _musicPlayer;
@@ -163,7 +157,6 @@ public class BombermanGame extends Application {
 
     public void update() {
 
-        // không sửa thành for each trong game không sẽ bị lỗi
         for (int i = 0; i < enemies.size(); i++) {
             enemies.get(i).update();
         }
@@ -173,8 +166,8 @@ public class BombermanGame extends Application {
 
         myBomber.update();
         List<Bomb> bombs = myBomber.getBombs();
-        for (Bomb bomb : bombs) {
-            bomb.update();
+        for (int i = 0; i < bombs.size(); i++) {
+            bombs.get(i).update();
         }
 
         for (int i = 0; i < stillObjects.size(); i++) {
@@ -186,39 +179,55 @@ public class BombermanGame extends Application {
 
     public void load(int _level) {
         try {
-            URL url = BombermanGame.class.getResource("/levels/Level" + _level + ".txt");
-            assert url != null;
-            BufferedReader br = new BufferedReader(new java.io.FileReader(url.getPath()));
-            String line;
-            while ((line = br.readLine()) != null) {
-                input.add(line);
+            if (enemies.size() > 0) {
+                for (int i = 0; i < enemies.size(); i++)
+                    enemies.remove(enemies.get(i));
             }
-            br.close();
+            //enemies.removeAll(enemies);
+            if (stillObjects.size() > 0) {
+                for (int i = 0; i < stillObjects.size(); i++)
+                    stillObjects.remove(stillObjects.get(i));
+            }
+            if (flameList.size() > 0) {
+                for (int i = 0; i < flameList.size(); i++)
+                    flameList.remove(flameList.get(i));
+            }
+//            stillObjects.removeAll(stillObjects);
+//            flameList.removeAll(flameList);
+            if (inputMap.size() > 0) {
+                for (int i = 0; i < inputMap.size(); i++)
+                    inputMap.remove(inputMap.get(i));
+            }
+//            if(inputMap != null) {
+//                inputMap.removeAll(inputMap);
+//            }
+            File file;
+            file = new File(Objects.requireNonNull(getClass().getResource("/levels/Level" + _level + ".txt")).toURI());
+            Scanner scanner = new Scanner(file);
+            for(int i = 0; i <= 13; i++) {
+                String line = (scanner.nextLine());
+                inputMap.add(line);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        String[] arrays = input.get(0).trim().split(" ");
-
+        String[] arrays = inputMap.get(0).trim().split(" ");
         HEIGHT = Integer.parseInt(arrays[1]);
         WIDTH = Integer.parseInt(arrays[2]);
-        enemies.removeAll(enemies);
-        stillObjects.removeAll(stillObjects);
-        flameList.removeAll(flameList);
-//        if(myBomber != null)
-//            myBomber.getBombs().removeAll(myBomber.getBombs());
-        // print all list
-//        for (String s : input) {
-//            System.out.println(s);
-//        }
         createMap();
     }
 
     public void createMap() {
-        createMatrixCoordinates();
+        for (int i = 0; i < HEIGHT; i++) {
+            for (int j = 0; j < WIDTH; j++) {
+                map[i][j] = 0;
+                mapAStar[i][j] = 0;
+                isSolid[i][j] = 0;
+            }
+        }
         for (int i = 0; i < HEIGHT; i++) {
 
-            String r = input.get(i + 1);
+            String r = inputMap.get(i + 1);
 
             for (int j = 0; j < WIDTH; j++) {
 
@@ -226,18 +235,21 @@ public class BombermanGame extends Application {
                     stillObjects.add(new Wall(j, i, Sprite.wall.getFxImage()));
                     map[i][j] = 1;
                     mapAStar[i][j] = -1;
+                    isSolid[i][j] = 1;
                 } else {
                     stillObjects.add(new Grass(j, i, Sprite.grass.getFxImage()));
                     if (r.charAt(j) == '*') {
                         stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
                         map[i][j] = 1;
                         mapAStar[i][j] = -1;
+                        isSolid[i][j] = 1;
                     }
                     if (r.charAt(j) == 'x') {
                         stillObjects.add(new Portal(j, i, Sprite.portal.getFxImage()));
                         stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
                         map[i][j] = 1;
                         mapAStar[i][j] = -1;
+                        isSolid[i][j] = 1;
                     }
                     if (r.charAt(j) == '1') {
                         enemies.add(new Balloon(j, i, Sprite.balloom_left1.getFxImage()));
@@ -265,18 +277,21 @@ public class BombermanGame extends Application {
                         stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
                         map[i][j] = 1;
                         mapAStar[i][j] = -1;
+                        isSolid[i][j] = 1;
                     }
                     if (r.charAt(j) == 'f') {
                         stillObjects.add(new FlameItem(j, i, Sprite.powerup_flames.getFxImage()));
                         stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
                         map[i][j] = 1;
                         mapAStar[i][j] = -1;
+                        isSolid[i][j] = 1;
                     }
                     if (r.charAt(j) == 's') {
                         stillObjects.add(new SpeedItem(j, i, Sprite.powerup_speed.getFxImage()));
                         stillObjects.add(new Brick(j, i, Sprite.brick.getFxImage()));
                         map[i][j] = 1;
                         mapAStar[i][j] = -1;
+                        isSolid[i][j] = 1;
                     }
                     if (r.charAt(j) == 'p') {
                         myBomber = new Bomber(j, i, Sprite.player_right.getFxImage());
@@ -291,25 +306,23 @@ public class BombermanGame extends Application {
                 }
             }
         }
-        stillObjects.sort(new Layer());
-    }
-
-    public void createMatrixCoordinates() {
         for (int i = 0; i < HEIGHT; i++) {
             for (int j = 0; j < WIDTH; j++) {
-                map[i][j] = 0;
-                mapAStar[i][j] = 0;
+                System.out.print(isSolid[i][j]);
             }
+            System.out.println();
         }
+        stillObjects.sort(new Layer());
     }
 
     public void handleCollisions() {
         List<Bomb> bombs = myBomber.getBombs();
-        Rectangle r1 = myBomber.getBounds();
+        Rectangle r1 = myBomber.getHitBoxPlayer();
 
         //Bomber vs StillObjects
         for (Entity stillObject : stillObjects) {
-            Rectangle r2 = stillObject.getBounds();
+            Rectangle r2 = stillObject.getHitbox();
+            //myBomber.getX() == stillObject.getX() && myBomber.getY() == stillObject.getY()
             if (r1.intersects(r2)) {
                 if (myBomber.getLayer() == stillObject.getLayer() && stillObject instanceof Item) {
                     if (stillObject instanceof BombItem) {
@@ -338,11 +351,13 @@ public class BombermanGame extends Application {
                         if (level > 4) {
                             level = 0;
                         }
-                        load(level);
 
+                        load(level);
                         // âm thanh ăn item
                         MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.POWER_UP);
                         powerUpAudio.play();
+                    } else {
+                        myBomber.move();
                     }
                 } else if (myBomber.getLayer() >= stillObject.getLayer()) {
                     myBomber.move();
@@ -380,11 +395,14 @@ public class BombermanGame extends Application {
         for (Enemy enemy : enemies) {
             Rectangle r2 = enemy.getBounds();
             for (Bomb bomb : bombs) {
-                Rectangle r3 = bomb.getBounds();
+                Rectangle r3 = bomb.getHitbox();
                 if (!bomb.isAllowedToPassThrough(enemy) && r2.intersects(r3)) {
                     enemy.stay();
+                    //isSolid[bomb.getY() / Sprite.SCALED_SIZE][bomb.getX() / Sprite.SCALED_SIZE] = 1;
                     break;
                 }
+//                if (enemy.getLayer() < bomb.getLayer())
+//                    isSolid[enemy.getY() / Sprite.SCALED_SIZE][enemy.getX() / Sprite.SCALED_SIZE] = 1;
             }
         }
 
@@ -392,7 +410,7 @@ public class BombermanGame extends Application {
         for (Enemy enemy : enemies) {
             Rectangle r2 = enemy.getBounds();
             for (Entity stillObject : stillObjects) {
-                Rectangle r3 = stillObject.getBounds();
+                Rectangle r3 = stillObject.getHitbox();
                 if (r2.intersects(r3)) {
                     if (enemy.getLayer() >= stillObject.getLayer()) {
                         enemy.move();
@@ -408,24 +426,33 @@ public class BombermanGame extends Application {
     public void checkCollisionFlame() {
         //if(explosionList != null){
         for (Flame flame : flameList) {
-            Rectangle r1 = flame.getBounds();
+            int ok = 1;
+            Rectangle r1 = flame.getHitbox();
             for (Entity stillObject : stillObjects) {
-                Rectangle r2 = stillObject.getBounds();
-                if (r1.intersects(r2) && !(stillObject instanceof Item)) {
+                Rectangle r2 = stillObject.getHitbox();
+                if (r1.intersects(r2) && !(stillObject instanceof Item) && !(stillObject instanceof Grass)) {
                     stillObject.setAlive(false);
+                    ok = 0;
+                    isSolid[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;
                     map[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;
                     mapAStar[stillObject.getY() / Sprite.SCALED_SIZE][stillObject.getX() / Sprite.SCALED_SIZE] = 0;
                 }
             }
+            if(ok == 0)
+                continue;
             for (Enemy enemy : enemies) {
                 Rectangle r2 = enemy.getBounds();
                 if (r1.intersects(r2)) {
                     enemy.setAlive(false);
+                    ok = 0;
                     MyAudioPlayer powerUpAudio = new MyAudioPlayer(MyAudioPlayer.ENEMY_DEAD);
                     powerUpAudio.play();
                 }
             }
-            Rectangle r2 = myBomber.getBounds();
+
+            if(ok == 0)
+                continue;
+            Rectangle r2 = myBomber.getHitBoxPlayer();
             if (r1.intersects(r2)) {
                 myBomber.setAlive(false);
                 startBomb = 1;
