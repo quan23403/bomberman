@@ -18,7 +18,7 @@ public class Kondoria extends Enemy {
     private int moveY = 0;
     public Kondoria(int x, int y, Image image) {
         super(x, y, image);
-        setLayer(1);
+        setLayer(4);
         setSpeed(2);
         generateDirection();
     }
@@ -50,6 +50,7 @@ public class Kondoria extends Enemy {
 
     @Override
     public void update() {
+
         if(isAlive()){
             generateDirection();
             if (direction == 0) goLeft();
@@ -71,6 +72,8 @@ public class Kondoria extends Enemy {
     public void generateDirection() {
         direction = -1;
         Bomber bomber = BombermanGame.myBomber;
+        if(bomber.isAlive() == false)
+            restartEnemy();
         int j = this.getX() / Sprite.SCALED_SIZE;
         int i = this.getY() / Sprite.SCALED_SIZE;
 
@@ -82,16 +85,16 @@ public class Kondoria extends Enemy {
             moveY = 0;
             if (j == jBomber) {
                 moveX = 0;
-            } else if (BombermanGame.isSolid[i][j-1] == 0 && jBomber < j) {
+            } else if (jBomber < j) {
                 moveX = - this.speed;
-            } else if (BombermanGame.isSolid[i][j+1] == 0 && jBomber > j) {
+            } else if ( jBomber > j) {
                 moveX = this.speed;
             }
             if(i == iBomber) {
                 moveY = 0;
-            } else if (BombermanGame.isSolid[i-1][j] == 0 && iBomber < i) {
+            } else if ( iBomber < i) {
                 moveY = this.speed;
-            } else if (BombermanGame.isSolid[i+1][j] == 0 && iBomber > i) {
+            } else if ( iBomber > i) {
                 moveY =  - this.speed;
             }
             // Uu tien cai xa hon
