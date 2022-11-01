@@ -21,23 +21,33 @@ public abstract class Entity {
     protected int animated = 0;
     protected int layer;
     protected boolean alive;
-
+    protected Rectangle hitbox;
     public Entity() {
 
     }
-
     // Khởi tạo đối tượng, chuyển từ tọa độ đơn vị sang tọa độ trong canvas
     public Entity(int xUnit, int yUnit, Image img) {
         x = xUnit * Sprite.SCALED_SIZE;
         y = yUnit * Sprite.SCALED_SIZE;
+//        x = xUnit;
+//        y = yUnit;
         this.img = img;
+        initHitbox();
     }
 
     public Entity(int x, int y) {
         this.x = x;
         this.y = y;
+        initHitbox();
     }
 
+    private void initHitbox() {
+        hitbox = new Rectangle(x, y, Sprite.SCALED_SIZE - 1, Sprite.SCALED_SIZE - 1);
+    }
+
+    public Rectangle getHitbox() {
+        return  hitbox;
+    }
     public void render(GraphicsContext gc) {
         gc.drawImage(img, x, y);
     }
@@ -63,10 +73,6 @@ public abstract class Entity {
 
     public void setAlive(boolean alive) {
         this.alive = alive;
-    }
-
-    public Rectangle getBounds() {
-        return new Rectangle(x, y, Sprite.SCALED_SIZE - 2, Sprite.SCALED_SIZE -2);
     }
 
     public boolean isAlive() {

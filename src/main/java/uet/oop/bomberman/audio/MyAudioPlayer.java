@@ -39,7 +39,7 @@ public class MyAudioPlayer implements Runnable {
             BACKGROUND_MUSIC.add("Can_t Be Touched - Body Head Bangerz");
             BACKGROUND_MUSIC.add("Naruto-Main-Theme");
             BACKGROUND_MUSIC.add("Fairy Tail");
-            BACKGROUND_MUSIC.add("OnePice.wav");
+            BACKGROUND_MUSIC.add("OnePice");
         }
     }
 

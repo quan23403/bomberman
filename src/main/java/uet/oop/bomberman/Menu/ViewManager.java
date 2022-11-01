@@ -97,7 +97,7 @@ public class ViewManager {
     private void createButtons() {
         //createLogo();
         createStartButtons();
-       //createSettingButtons();
+        //createSettingButtons();
         createBackground();
         //createCreditsButton();
         createHelpButton();
@@ -109,7 +109,7 @@ public class ViewManager {
         //createSettingSubscene();
     }
 
-//    private void createSettingSubscene() {
+    //    private void createSettingSubscene() {
 //        settingSubscene = new BombermanSubscene();
 //        mainPane.getChildren().add(settingSubscene);
 //

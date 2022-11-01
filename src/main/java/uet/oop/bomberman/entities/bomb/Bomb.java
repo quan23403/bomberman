@@ -5,6 +5,7 @@ import uet.oop.bomberman.audio.MyAudioPlayer;
 import uet.oop.bomberman.entities.AnimatedEntity;
 import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.entities.character.Bomber;
+import uet.oop.bomberman.entities.character.enemies.Minvo;
 import uet.oop.bomberman.graphics.Sprite;
 
 import java.awt.*;
@@ -24,7 +25,7 @@ public class Bomb extends AnimatedEntity {
 
     public Bomb(int xUnit, int yUnit, Image img, int radius) {
         super(xUnit, yUnit, img);
-        setLayer(2);
+        setLayer(1);
         this.radius = radius;
     }
 
@@ -57,6 +58,9 @@ public class Bomb extends AnimatedEntity {
         Rectangle r2;
         if (e instanceof Bomber bomber) {
             r2 = new Rectangle(bomber.getX() + 4, bomber.getY() + 4,
+                    Sprite.SCALED_SIZE * 3 / 4, Sprite.SCALED_SIZE * 3 / 4);
+        } else if(e instanceof Minvo minvo) {
+            r2 = new Rectangle(minvo.getX() + 4, minvo.getY() + 4,
                     Sprite.SCALED_SIZE * 3 / 4, Sprite.SCALED_SIZE * 3 / 4);
         } else {
             r2 = new Rectangle(e.getX(), e.getY(), Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);

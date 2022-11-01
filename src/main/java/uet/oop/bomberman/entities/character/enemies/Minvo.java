@@ -9,7 +9,7 @@ import uet.oop.bomberman.graphics.Sprite;
 import uet.oop.bomberman.entities.character.enemies.AI.Point;
 import java.awt.*;
 
-public class Minvo extends Enemy implements CollisionTypeCheck {
+public class Minvo extends Enemy {
     //phục vụ việc lưu tọa độ tránh lặp lại quá nhiều lần tìm BFS gây lag
     private int prevBombX = 0;
     private int prevBombY = 0;
@@ -20,46 +20,46 @@ public class Minvo extends Enemy implements CollisionTypeCheck {
     private int direction;
     public Minvo(int xUnit, int yUnit, Image img) {
         super(xUnit, yUnit, img);
-        setLayer(1);
+        setLayer(4);
         setSpeed(1);
-        path = BFS.findPath(BombermanGame.map, new Point(this.x / Sprite.SCALED_SIZE,
-                        this.y / Sprite.SCALED_SIZE),
-                new Point(BombermanGame.myBomber.getX() / Sprite.SCALED_SIZE,
+        path = BFS.findPath(BombermanGame.map, new Point(this.y / Sprite.SCALED_SIZE,
+                        this.x / Sprite.SCALED_SIZE),
+                new Point(BombermanGame.myBomber.getY() / Sprite.SCALED_SIZE,
                         BombermanGame.myBomber.getX() / Sprite.SCALED_SIZE));
         generateDirection();
     }
 
     public void goLeft() {
         super.goLeft();
-        img = Sprite.movingSprite(Sprite.minvo_left1, Sprite.minvo_left2, Sprite.minvo_left3, left ++, 18).getFxImage();
+        img = Sprite.movingSprite(Sprite.minvo_left1, Sprite.minvo_left2, Sprite.minvo_left3, img_No ++, 18).getFxImage();
     }
 
     public void goRight() {
         super.goRight();
-        img = Sprite.movingSprite(Sprite.minvo_right1, Sprite.minvo_right2, Sprite.minvo_right3, right ++, 18).getFxImage();
+        img = Sprite.movingSprite(Sprite.minvo_right1, Sprite.minvo_right2, Sprite.minvo_right3, img_No ++, 18).getFxImage();
     }
 
     public void goUp() {
         super.goUp();
-        img = Sprite.movingSprite(Sprite.minvo_left1, Sprite.minvo_left2, Sprite.minvo_left3, up ++, 18).getFxImage();
+        img = Sprite.movingSprite(Sprite.minvo_left1, Sprite.minvo_left2, Sprite.minvo_left3, img_No ++, 18).getFxImage();
     }
 
     public void goDown() {
         super.goDown();
-        img = Sprite.movingSprite(Sprite.minvo_right1, Sprite.minvo_right2, Sprite.minvo_right3, down ++, 18).getFxImage();
+        img = Sprite.movingSprite(Sprite.minvo_right1, Sprite.minvo_right2, Sprite.minvo_right3, img_No ++, 18).getFxImage();
     }
 
     //interface sau này cải tiến
-    @Override
-    public Object collisionType(Rectangle r){
-        for(Entity e : BombermanGame.stillObjects){
-            Rectangle r2 = e.getBounds();
-            if(r.intersects(r2)){
-                return e;
-            }
-        }
-        return r;
-    }
+//    @Override
+//    public Object collisionType(Rectangle r){
+//        for(Entity e : BombermanGame.stillObjects){
+//            Rectangle r2 = e.getHitbox();
+//            if(r.intersects(r2)){
+//                return e;
+//            }
+//        }
+//        return r;
+//    }
 
     @Override
     public void generateDirection() {
@@ -120,31 +120,7 @@ public class Minvo extends Enemy implements CollisionTypeCheck {
                 } else if (path != null) {
                     double xPath = (double) Math.round((double) path[prevI].x * 100) / 100;
                     double yPath = (double) Math.round((double) path[prevI].y * 100) / 100;
-                    //                System.out.println(path[prevI].x + " " + path[prevI].y);
-                    //                System.out.println(BombermanGame.myBomber.getX() / Sprite.SCALED_SIZE + " " +
-                    //                        BombermanGame.myBomber.getY() / Sprite.SCALED_SIZE + "lala");
-                    //                System.out.println((double) this.getX() / Sprite.SCALED_SIZE + " " +
-                    //                        this.getY() / Sprite.SCALED_SIZE + "lala");
-//                    System.out.println((double) (this.x / Sprite.SCALED_SIZE) + " " +
-//                            yConverted + "lala");
-                    //                System.out.println("prevI" + prevI);
 
-                    //                if (path[prevI].x - xConverted == 0 && path[prevI].y - yConverted == 1) {
-                    //                    direction = 3;
-                    //                    System.out.println("one");
-                    //                } else if (path[prevI].x - xConverted == 0 && path[prevI].y - yConverted == -1) {
-                    //                    direction = 2;
-                    //                    System.out.println("two");
-                    //                } else if (path[prevI].x - xConverted == -1 && path[prevI].y - yConverted == 0) {
-                    //                    direction = 0;
-                    //                    System.out.println("three");
-                    //                } else if (path[prevI].x - xConverted == 1 && path[prevI].y - yConverted == 0) {
-                    //                    direction = 1;
-                    //                    System.out.println("four");
-                    //                } else if (path[prevI].x - xConverted == 0 && path[prevI].y - yConverted == 0) {
-                    //                    prevI ++;
-                    //                    System.out.println("five");
-                    //                }
 
                     if (xPath - xConverted == 0 && yPath - yConverted > 0) {
                         direction = 3;
