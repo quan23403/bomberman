@@ -57,14 +57,18 @@ public class Bomb extends AnimatedEntity {
         Rectangle r1 = getBounds();
         Rectangle r2;
         if (e instanceof Bomber bomber) {
-            r2 = new Rectangle(bomber.getX() + 4, bomber.getY() + 4,
-                    Sprite.SCALED_SIZE * 3 / 4, Sprite.SCALED_SIZE * 3 / 4);
-        } else if(e instanceof Minvo minvo) {
-            r2 = new Rectangle(minvo.getX() + 4, minvo.getY() + 4,
-                    Sprite.SCALED_SIZE * 3 / 4, Sprite.SCALED_SIZE * 3 / 4);
-        } else {
-            r2 = new Rectangle(e.getX(), e.getY(), Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
+//            r2 = new Rectangle(bomber.getX() + 4, bomber.getY() + 4,
+//                    Sprite.SCALED_SIZE * 3 / 4, Sprite.SCALED_SIZE * 3 / 4);
+            return true;
+        } else if (e instanceof Minvo minvo) {
+//            r2 = new Rectangle(minvo.getX() + 4, minvo.getY() + 4,
+//                    Sprite.SCALED_SIZE * 3 / 4, Sprite.SCALED_SIZE * 3 / 4);
+            return true;
         }
-        return r1.intersects(r2);
+        return false;
+//        } else {
+//            r2 = new Rectangle(e.getX(), e.getY(), Sprite.SCALED_SIZE, Sprite.SCALED_SIZE);
+//        }
+//        return r1.intersects(r2);//   }
     }
 }

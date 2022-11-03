@@ -2,12 +2,9 @@ package uet.oop.bomberman.entities.character.enemies;
 
 import javafx.scene.image.Image;
 import uet.oop.bomberman.BombermanGame;
-import uet.oop.bomberman.entities.CollisionTypeCheck;
-import uet.oop.bomberman.entities.Entity;
 import uet.oop.bomberman.entities.character.enemies.AI.BFS;
 import uet.oop.bomberman.graphics.Sprite;
 import uet.oop.bomberman.entities.character.enemies.AI.Point;
-import java.awt.*;
 
 public class Minvo extends Enemy {
     //phục vụ việc lưu tọa độ tránh lặp lại quá nhiều lần tìm BFS gây lag
